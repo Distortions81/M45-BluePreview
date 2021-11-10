@@ -12,7 +12,9 @@ var outputFile = "output.png"
 
 func main() {
 
-	image := image.NewRGBA(image.Rect(0, 0, 1024, 1024))
+	mapimage := image.NewRGBA(image.Rect(0, 0, 1024, 1024))
+	newimage := image.NewRGBA(image.Rect(0, 0, 1024, 1024))
+
 	var c uint8 = 0
 	size := 16
 
@@ -34,12 +36,17 @@ func main() {
 				}
 			}
 
-			image.Set(x, y, color.RGBA{c, c, c, 255})
+			//If map has pixel here, draw it, otherwise draw BG
+			if mapimage.At(x, y) != (color.RGBA{0, 0, 0, 0}) {
+				newimage.Set(x, y, mapimage.At(x, y))
+			} else {
+				newimage.Set(x, y, color.RGBA{c, c, c, 255})
+			}
 		}
 	}
 
 	output, _ := os.Create(outputFile)
-	if png.Encode(output, image) != nil {
+	if png.Encode(output, newimage) != nil {
 		panic("Failed to write image")
 	}
 
