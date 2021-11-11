@@ -129,15 +129,23 @@ func main() {
 	}
 
 	for _, v := range newbp.BluePrint.Entities {
-		objx := int(v.Position.X-minx) + 2
-		objy := int(v.Position.Y-miny) + 2
+		objx := int(v.Position.X-minx+0.5) + 2
+		objy := int(v.Position.Y-miny+0.5) + 2
 
 		item := findItem(v.Name)
+
+		if item.X > 1 {
+			objx = objx - 1
+		}
+		if item.Y > 1 {
+			objy = objy - 1
+		}
 
 		x := int(objx * scaleup)
 		y := int(objy * scaleup)
 		xs := int(item.X * scaleup)
 		ys := int(item.Y * scaleup)
+
 		for xo := 0; xo < xs; xo = xo + 1 {
 			for yo := 0; yo < ys; yo = yo + 1 {
 				mapimage.Set(x+xo, y+yo, item.Color)
