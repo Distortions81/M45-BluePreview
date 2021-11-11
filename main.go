@@ -1,16 +1,47 @@
 package main
 
 import (
+	"bytes"
+	"compress/zlib"
+	"encoding/base64"
 	"fmt"
 	"image"
 	"image/color"
 	"image/png"
+	"io/ioutil"
 	"os"
 )
 
 var outputFile = "output.png"
+var inputFile = "input.txt"
 
 func main() {
+
+	fmt.Println("Reading input file...")
+
+	// Open the input file
+	input, err := os.ReadFile(inputFile)
+	if err != nil {
+		fmt.Println("Error opening input file:", err)
+		return
+	}
+
+	data, err := base64.StdEncoding.DecodeString(string(input[1:]))
+	if err != nil {
+		fmt.Println("Error decoding input file:", err)
+		return
+	}
+	//fmt.Println(data)
+
+	r, err := zlib.NewReader(bytes.NewReader(data))
+	if err != nil {
+		panic(err)
+	}
+	enflated, err := ioutil.ReadAll(r)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(enflated))
 
 	mapimage := image.NewRGBA(image.Rect(0, 0, 1024, 1024))
 	newimage := image.NewRGBA(image.Rect(0, 0, 1024, 1024))
