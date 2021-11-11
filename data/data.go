@@ -1,5 +1,7 @@
 package data
 
+import "image/color"
+
 const NORTH = 0
 const NORTH_EAST = 1
 const EAST = 2
@@ -9,170 +11,167 @@ const SOUTH_WEST = 5
 const WEST = 6
 const NORTH_WEST = 7
 
-type ColorRGB8 struct {
-	R uint8
-	G uint8
-	B uint8
-}
+var ColorRed = color.RGBA{255, 0, 0, 255}
+var ColorGreen = color.RGBA{0, 255, 0, 255}
+var ColorBlue = color.RGBA{0, 0, 255, 255}
+var ColorYellow = color.RGBA{255, 255, 0, 255}
+var ColorBlack = color.RGBA{0, 0, 0, 255}
+var ColorWhite = color.RGBA{255, 255, 255, 255}
+var ColorGray = color.RGBA{128, 128, 128, 255}
+var ColorOrange = color.RGBA{255, 165, 0, 255}
+var ColorPink = color.RGBA{255, 192, 203, 255}
+var ColorPurple = color.RGBA{128, 0, 128, 255}
+var ColorSilver = color.RGBA{192, 192, 192, 255}
+var ColorTeal = color.RGBA{0, 128, 128, 255}
+var ColorMaroon = color.RGBA{128, 0, 0, 255}
+var ColorNavy = color.RGBA{0, 0, 128, 255}
+var ColorOlive = color.RGBA{128, 128, 0, 255}
+var ColorLime = color.RGBA{0, 255, 0, 255}
+var ColorFuchsia = color.RGBA{255, 0, 255, 255}
+var ColorAqua = color.RGBA{0, 255, 255, 255}
+var ColorTransparent = color.RGBA{0, 0, 0, 255}
 
-var RED = ColorRGB8{255, 0, 0}
-
-var GREEN = ColorRGB8{0, 255, 0}
-var BLUE = ColorRGB8{0, 0, 255}
-var WHITE = ColorRGB8{255, 255, 255}
-var BLACK = ColorRGB8{0, 0, 0}
-var YELLOW = ColorRGB8{255, 255, 0}
-var CYAN = ColorRGB8{0, 255, 255}
-var MAGENTA = ColorRGB8{255, 0, 255}
-var ORANGE = ColorRGB8{255, 128, 0}
-var PURPLE = ColorRGB8{128, 0, 128}
-var BROWN = ColorRGB8{128, 64, 0}
-var LIGHT_GRAY = ColorRGB8{192, 192, 192}
-var DARK_GRAY = ColorRGB8{64, 64, 64}
-var LIGHT_RED = ColorRGB8{255, 128, 128}
-var LIGHT_GREEN = ColorRGB8{128, 255, 128}
-var LIGHT_BLUE = ColorRGB8{128, 128, 255}
-var LIGHT_YELLOW = ColorRGB8{55, 255, 128}
-var LIGHT_CYAN = ColorRGB8{128, 255, 255}
-var LIGHT_MAGENTA = ColorRGB8{128, 128, 255}
-var LIGHT_ORANGE = ColorRGB8{255, 192, 128}
-var LIGHT_PURPLE = ColorRGB8{192, 128, 255}
-var LIGHT_BROWN = ColorRGB8{192, 96, 128}
-
-var DARK_RED = ColorRGB8{128, 0, 0}
-var DARK_GREEN = ColorRGB8{0, 128, 0}
-var DARK_BLUE = ColorRGB8{0, 0, 128}
-var DARK_YELLOW = ColorRGB8{128, 128, 0}
-var DARK_CYAN = ColorRGB8{0, 128, 128}
-var DARK_MAGENTA = ColorRGB8{128, 0, 128}
-var DARK_ORANGE = ColorRGB8{128, 64, 0}
-var DARK_PURPLE = ColorRGB8{64, 0, 64}
-var DARK_BROWN = ColorRGB8{64, 32, 0}
+var ColorLightRed = color.RGBA{255, 192, 192, 255}
+var ColorLightGreen = color.RGBA{192, 255, 192, 255}
+var ColorLightBlue = color.RGBA{192, 192, 255, 255}
+var ColorLightYellow = color.RGBA{255, 255, 192, 255}
+var ColorLightGray = color.RGBA{192, 192, 192, 255}
+var ColorLightOrange = color.RGBA{255, 224, 192, 255}
+var ColorLightPink = color.RGBA{255, 224, 224, 255}
+var ColorLightPurple = color.RGBA{192, 192, 255, 255}
+var ColorLightSilver = color.RGBA{224, 224, 224, 255}
+var ColorLightTeal = color.RGBA{192, 224, 192, 255}
+var ColorLightMaroon = color.RGBA{192, 192, 128, 255}
+var ColorLightNavy = color.RGBA{192, 192, 128, 255}
+var ColorLightOlive = color.RGBA{224, 192, 128, 255}
+var ColorLightLime = color.RGBA{192, 255, 192, 255}
+var ColorLightFuchsia = color.RGBA{255, 192, 255, 255}
+var ColorLightAqua = color.RGBA{192, 255, 255, 255}
 
 type Item struct {
-	name string
-	x    int
-	y    int
+	Name string
+	X    float64
+	Y    float64
 
-	color ColorRGB8
+	Color color.RGBA
 }
 
 var ItemData = [...]Item{
 
 	//Default
-	{"default", 1, 1, LIGHT_ORANGE},
+	{"default", 1, 1, ColorOrange},
 
 	//Chests
-	{"wooden-chest", 1, 1, LIGHT_ORANGE},
-	{"iron-chest", 1, 1, LIGHT_ORANGE},
-	{"steel-chest", 1, 1, LIGHT_ORANGE},
+	{"wooden-chest", 1, 1, ColorLightOrange},
+	{"iron-chest", 1, 1, ColorLightOrange},
+	{"steel-chest", 1, 1, ColorLightOrange},
 
 	//Belts
-	{"transport-belt", 1, 1, LIGHT_GRAY},
-	{"fast-transport-belt", 1, 1, LIGHT_GRAY},
-	{"express-transport-belt", 1, 1, LIGHT_GRAY},
+	{"transport-belt", 1, 1, ColorLightGray},
+	{"fast-transport-belt", 1, 1, ColorLightGray},
+	{"express-transport-belt", 1, 1, ColorLightGray},
 
 	//Unders
-	{"underground-belt", 1, 1, DARK_GRAY},
-	{"fast-underground-belt", 1, 1, DARK_GRAY},
-	{"express-underground-belt", 1, 1, DARK_GRAY},
+	{"underground-belt", 1, 1, ColorGray},
+	{"fast-underground-belt", 1, 1, ColorGray},
+	{"express-underground-belt", 1, 1, ColorGray},
 
 	//Splitters
-	{"splitter", 2, 1, DARK_GRAY},
-	{"fast-splitter", 2, 1, DARK_GRAY},
-	{"express-splitter", 2, 1, DARK_GRAY},
+	{"splitter", 2, 1, ColorGray},
+	{"fast-splitter", 2, 1, ColorGray},
+	{"express-splitter", 2, 1, ColorGray},
 
 	//Inserters
-	{"burner-inserter", 1, 1, WHITE},
-	{"inserter", 1, 1, WHITE},
-	{"long-handed-inserter", 1, 1, WHITE},
-	{"fast-inserter", 1, 1, WHITE},
-	{"filter-inserter", 1, 1, WHITE},
-	{"stack-inserter", 1, 1, WHITE},
-	{"stack-filter-inserter", 1, 1, WHITE},
+	{"burner-inserter", 1, 1, ColorOrange},
+	{"inserter", 1, 1, ColorOrange},
+	{"long-handed-inserter", 1, 1, ColorOrange},
+	{"fast-inserter", 1, 1, ColorOrange},
+	{"filter-inserter", 1, 1, ColorOrange},
+	{"stack-inserter", 1, 1, ColorOrange},
+	{"stack-filter-inserter", 1, 1, ColorOrange},
 
 	//Poles
-	{"small-electric-pole", 1, 1, LIGHT_YELLOW},
-	{"medium-electric-pole", 1, 1, LIGHT_YELLOW},
-	{"big-electric-pole", 2, 2, LIGHT_YELLOW},
-	{"substation", 2, 2, LIGHT_YELLOW},
+	{"small-electric-pole", 1, 1, ColorRed},
+	{"medium-electric-pole", 1, 1, ColorRed},
+	{"big-electric-pole", 2, 2, ColorRed},
+	{"substation", 2, 2, ColorRed},
 
 	//Pipes
-	{"pipe", 1, 1, DARK_BLUE},
-	{"pipe-to-ground", 1, 1, DARK_BLUE},
-	{"pump", 1, 2, BLUE},
+	{"pipe", 1, 1, ColorLightBlue},
+	{"pipe-to-ground", 1, 1, ColorBlue},
+	{"pump", 1, 2, ColorLightBlue},
 
 	//Rails
-	{"straight-rail", 2, 2, LIGHT_GRAY},
-	{"curved-rail", 2, 2, LIGHT_GRAY},
-	{"train-stop", 2, 2, LIGHT_GRAY},
-	{"rail-signal", 1, 1, LIGHT_GRAY},
-	{"rail-chain-signal", 1, 1, LIGHT_GRAY},
+	{"straight-rail", 2, 2, ColorLightGreen},
+	{"curved-rail", 2, 2, ColorLightGreen},
+	{"train-stop", 2, 2, ColorGreen},
+	{"rail-signal", 1, 1, ColorGreen},
+	{"rail-chain-signal", 1, 1, ColorGreen},
 
 	//Logistics
-	{"logistic-chest-active-provider", 1, 1, LIGHT_GRAY},
-	{"logistic-chest-passive-provider", 1, 1, LIGHT_GRAY},
-	{"logistic-chest-storage", 1, 1, LIGHT_GRAY},
-	{"logistic-chest-buffer", 1, 1, LIGHT_GRAY},
-	{"logistic-chest-requester", 1, 1, LIGHT_GRAY},
-	{"roboport", 4, 4, LIGHT_GRAY},
+	{"logistic-chest-active-provider", 1, 1, ColorLightYellow},
+	{"logistic-chest-passive-provider", 1, 1, ColorLightYellow},
+	{"logistic-chest-storage", 1, 1, ColorLightYellow},
+	{"logistic-chest-buffer", 1, 1, ColorLightYellow},
+	{"logistic-chest-requester", 1, 1, ColorLightYellow},
+	{"roboport", 4, 4, ColorYellow},
 
 	//Lamp
-	{"small-lamp", 1, 1, LIGHT_YELLOW},
+	{"small-lamp", 1, 1, ColorWhite},
 
 	//Combinators
-	{"arithmetic-combinator", 1, 1, LIGHT_GRAY},
-	{"decider-combinator", 1, 1, LIGHT_GRAY},
-	{"constant-combinator", 1, 1, LIGHT_GRAY},
-	{"power-switch", 1, 1, LIGHT_GRAY},
-	{"programmable-speaker", 1, 1, LIGHT_GRAY},
+	{"arithmetic-combinator", 1, 2, ColorLightTeal},
+	{"decider-combinator", 1, 2, ColorLightTeal},
+	{"constant-combinator", 1, 1, ColorLightTeal},
+	{"power-switch", 2, 2, ColorTeal},
+	{"programmable-speaker", 1, 1, ColorFuchsia},
 
 	//Generators
-	{"boiler", 1, 1, LIGHT_GRAY},
-	{"steam-engine", 1, 1, LIGHT_GRAY},
-	{"solar-panel", 1, 1, LIGHT_GRAY},
-	{"accumulator", 1, 1, LIGHT_GRAY},
-	{"nuclear-reactor", 1, 1, LIGHT_GRAY},
-	{"heat-pipe", 1, 1, LIGHT_GRAY},
-	{"heat-exchanger", 1, 1, LIGHT_GRAY},
-	{"steam-turbine", 1, 1, LIGHT_GRAY},
+	{"boiler", 3, 2, ColorLime},
+	{"steam-engine", 3, 5, ColorLightLime},
+	{"solar-panel", 3, 3, ColorLightLime},
+	{"accumulator", 2, 2, ColorLime},
+	{"nuclear-reactor", 5, 5, ColorAqua},
+	{"heat-pipe", 1, 1, ColorPink},
+	{"heat-exchanger", 3, 2, ColorLightPink},
+	{"steam-turbine", 3, 5, ColorLightLime},
 
 	//Miners
-	{"burner-mining-drill", 1, 1, LIGHT_GRAY},
-	{"electric-mining-drill", 1, 1, LIGHT_GRAY},
-	{"offshore-pump", 1, 1, LIGHT_GRAY},
-	{"pumpjack", 1, 1, LIGHT_GRAY},
+	{"burner-mining-drill", 2, 2, ColorSilver},
+	{"electric-mining-drill", 3, 3, ColorSilver},
+	{"offshore-pump", 1, 2, ColorAqua},
+	{"pumpjack", 3, 3, ColorMaroon},
 
 	//Furnaces
-	{"stone-furnace", 1, 1, LIGHT_GRAY},
-	{"steel-furnace", 1, 1, LIGHT_GRAY},
-	{"electric-furnace", 1, 1, LIGHT_GRAY},
+	{"stone-furnace", 2, 2, ColorRed},
+	{"steel-furnace", 2, 2, ColorRed},
+	{"electric-furnace", 3, 3, ColorRed},
 
 	//Assemblers
-	{"assembling-machine-1", 1, 1, LIGHT_GRAY},
-	{"assembling-machine-2", 1, 1, LIGHT_GRAY},
-	{"assembling-machine-3", 1, 1, LIGHT_GRAY},
+	{"assembling-machine-1", 3, 3, ColorLightOrange},
+	{"assembling-machine-2", 3, 3, ColorLightOrange},
+	{"assembling-machine-3", 3, 3, ColorLightOrange},
 
 	//Refineries
-	{"oil-refinery", 1, 1, LIGHT_GRAY},
-	{"chemical-plant", 1, 1, LIGHT_GRAY},
-	{"centrifuge", 1, 1, LIGHT_GRAY},
-	{"lab", 1, 1, LIGHT_GRAY},
+	{"oil-refinery", 5, 5, ColorPurple},
+	{"chemical-plant", 3, 3, ColorPurple},
+	{"centrifuge", 3, 3, ColorPurple},
+	{"lab", 3, 3, ColorLightPurple},
 
 	//Late-game
-	{"beacon", 1, 1, LIGHT_GRAY},
-	{"rocket-silo", 1, 1, LIGHT_GRAY},
+	{"beacon", 3, 3, ColorLightPurple},
+	{"rocket-silo", 9, 9, ColorLightPurple},
 
 	//Walls
-	{"stone-wall", 1, 1, LIGHT_GRAY},
-	{"gate", 1, 1, LIGHT_GRAY},
+	{"stone-wall", 1, 1, ColorGray},
+	{"gate", 1, 1, ColorLightYellow},
 
 	//Turrets
-	{"gun-turret", 1, 1, LIGHT_GRAY},
-	{"laser-turret", 1, 1, LIGHT_GRAY},
-	{"flamethrower-turret", 1, 1, LIGHT_GRAY},
-	{"artillery-turret", 1, 1, LIGHT_GRAY},
+	{"gun-turret", 2, 2, ColorOrange},
+	{"laser-turret", 2, 2, ColorOrange},
+	{"flamethrower-turret", 2, 3, ColorOrange},
+	{"artillery-turret", 3, 3, ColorOrange},
 
 	//Radar
-	{"radar", 1, 1, LIGHT_GRAY},
+	{"radar", 3, 3, ColorLightOrange},
 }
