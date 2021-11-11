@@ -100,6 +100,7 @@ var ItemData = [...]Item{
 	{"pipe", 1, 1, ColorLightBlue},
 	{"pipe-to-ground", 1, 1, ColorBlue},
 	{"pump", 1, 2, ColorLightBlue},
+	{"storage-tank", 2, 2, ColorLightAqua},
 
 	//Rails
 	{"straight-rail", 2, 2, ColorLightGreen},
