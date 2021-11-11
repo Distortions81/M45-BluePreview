@@ -16,6 +16,9 @@ import (
 var outputFile = "output.png"
 var inputFile = "input.txt"
 
+const isx = 256
+const isy = 256
+
 func main() {
 
 	fmt.Println("Reading input file...")
@@ -79,35 +82,39 @@ func main() {
 		fmt.Println(string(str))
 	}
 
-	mapimage := image.NewRGBA(image.Rect(0, 0, 1024, 1024))
-	newimage := image.NewRGBA(image.Rect(0, 0, 1024, 1024))
+	mapimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
+	newimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
 
 	count := 0
 	for _, v := range newbp.BluePrint.Entities {
-		x := int(v.Position.X)
-		y := int(v.Position.Y)
-		mapimage.Set(x, y, color.RGBA{255, 255, 255, 255})
+		x := int(v.Position.X-32) * 4
+		y := int(v.Position.Y+16) * 4
+		for xo := 1; xo <= 4; xo = xo + 1 {
+			for yo := 1; yo <= 4; yo = yo + 1 {
+				mapimage.Set(x+xo, y+yo, color.RGBA{255, 255, 255, 255})
+			}
+		}
 
 		count = count + 1
 	}
 	fmt.Println(count)
 
 	var c uint8 = 0
-	size := 16
+	size := 32
 
-	for y := 0; y < 1024; y++ {
+	for y := 0; y < isy; y++ {
 		if y%size == 0 {
 			if c == 0 {
-				c = 8
+				c = 32
 			} else {
 				c = 0
 			}
 		}
-		for x := 0; x < 1024; x++ {
+		for x := 0; x < isx; x++ {
 
 			if x%size == 0 {
 				if c == 0 {
-					c = 8
+					c = 32
 				} else {
 					c = 0
 				}
@@ -117,7 +124,7 @@ func main() {
 			if mapimage.At(x, y) != (color.RGBA{0, 0, 0, 0}) {
 				newimage.Set(x, y, mapimage.At(x, y))
 			} else {
-				newimage.Set(x, y, color.RGBA{c, 0, 0, 255})
+				newimage.Set(x, y, color.RGBA{0, c, c, 255})
 			}
 		}
 	}
