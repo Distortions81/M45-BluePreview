@@ -1,5 +1,14 @@
 package data
 
+const NORTH = 0
+const NORTH_EAST = 1
+const EAST = 2
+const SOUTH_EAST = 3
+const SOUTH = 4
+const SOUTH_WEST = 5
+const WEST = 6
+const NORTH_WEST = 7
+
 type ColorRGB8 struct {
 	R uint8
 	G uint8
