@@ -19,10 +19,11 @@ import (
 var outputFile = "output.png"
 var inputFile = "input.txt"
 
-const isx = 256
-const isy = 256
+const isx = 4096
+const isy = 4096
 const scaleup = 4.0
 const checkersize = 32.0
+const tlSpace = 4.0
 
 func findItem(itemName string) data.Item {
 	for _, i := range data.ItemData {
@@ -129,8 +130,8 @@ func main() {
 	}
 
 	for _, v := range newbp.BluePrint.Entities {
-		objx := int(v.Position.X-minx+0.5) + 2
-		objy := int(v.Position.Y-miny+0.5) + 2
+		objx := int(v.Position.X - minx + 0.5)
+		objy := int(v.Position.Y - miny + 0.5)
 
 		item := findItem(v.Name)
 
@@ -141,8 +142,8 @@ func main() {
 			objy = objy - 1
 		}
 
-		x := int(objx * scaleup)
-		y := int(objy * scaleup)
+		x := int(objx*scaleup) + ((tlSpace + 2) * scaleup)
+		y := int(objy*scaleup) + (tlSpace * scaleup)
 		xs := int(item.X * scaleup)
 		ys := int(item.Y * scaleup)
 
@@ -160,18 +161,18 @@ func main() {
 	size := int(math.Round(checkersize * scaleup))
 
 	for y := 0; y < isy; y++ {
-		if y%size == 0 {
+		if (y-(tlSpace*scaleup))%size == 0 {
 			if c == 0 {
-				c = 32
+				c = 1
 			} else {
 				c = 0
 			}
 		}
 		for x := 0; x < isx; x++ {
 
-			if x%size == 0 {
+			if (x-((tlSpace+1)*scaleup))%size == 0 {
 				if c == 0 {
-					c = 32
+					c = 16
 				} else {
 					c = 0
 				}
