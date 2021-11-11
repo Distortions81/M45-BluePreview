@@ -10,7 +10,10 @@ import (
 	"image/color"
 	"image/png"
 	"io/ioutil"
+	"math"
 	"os"
+
+	"./data"
 )
 
 var outputFile = "output.png"
@@ -18,8 +21,20 @@ var inputFile = "input.txt"
 
 const isx = 256
 const isy = 256
-const scaleup = 4
-const checkersize = 32
+const scaleup = 4.0
+const checkersize = 32.0
+
+func findItem(itemName string) data.Item {
+	for _, i := range data.ItemData {
+		if i.Name == itemName {
+			//fmt.Println("Found item:", i.Name)
+			return i
+		}
+	}
+
+	fmt.Println("Item not found:", itemName)
+	return data.Item{"Default", 1, 1, color.RGBA{1, 0, 1, 1}}
+}
 
 func main() {
 
@@ -52,8 +67,8 @@ func main() {
 	//fmt.Println(string(enflated))
 
 	type Xy struct {
-		X float32
-		Y float32
+		X float64
+		Y float64
 	}
 	type Ent struct {
 		Entity_number int
@@ -91,13 +106,41 @@ func main() {
 	mapimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
 	newimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
 
-	//count := 0
+	//Normalize cordinates
+	minx := 0.0
+	miny := 0.0
+
 	for _, v := range newbp.BluePrint.Entities {
-		x := int(v.Position.X-32) * scaleup
-		y := int(v.Position.Y+16) * scaleup
-		for xo := 1; xo <= scaleup; xo = xo + 1 {
-			for yo := 1; yo <= scaleup; yo = yo + 1 {
-				mapimage.Set(x+xo, y+yo, color.RGBA{255, 255, 255, 255})
+		if v.Position.X > minx {
+			minx = v.Position.X
+		}
+		if v.Position.Y > miny {
+			miny = v.Position.Y
+		}
+	}
+
+	for _, v := range newbp.BluePrint.Entities {
+		if v.Position.X < minx {
+			minx = v.Position.X
+		}
+		if v.Position.Y < miny {
+			miny = v.Position.Y
+		}
+	}
+
+	for _, v := range newbp.BluePrint.Entities {
+		objx := int(v.Position.X-minx) + 2
+		objy := int(v.Position.Y-miny) + 2
+
+		item := findItem(v.Name)
+
+		x := int(objx * scaleup)
+		y := int(objy * scaleup)
+		xs := int(item.X * scaleup)
+		ys := int(item.Y * scaleup)
+		for xo := 0; xo < xs; xo = xo + 1 {
+			for yo := 0; yo < ys; yo = yo + 1 {
+				mapimage.Set(x+xo, y+yo, item.Color)
 			}
 		}
 
@@ -106,7 +149,7 @@ func main() {
 	//fmt.Println(count)
 
 	var c uint8 = 0
-	size := checkersize * scaleup
+	size := int(math.Round(checkersize * scaleup))
 
 	for y := 0; y < isy; y++ {
 		if y%size == 0 {
