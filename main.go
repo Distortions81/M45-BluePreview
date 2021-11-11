@@ -18,6 +18,8 @@ var inputFile = "input.txt"
 
 const isx = 256
 const isy = 256
+const scaleup = 4
+const checkersize = 32
 
 func main() {
 
@@ -30,6 +32,7 @@ func main() {
 		return
 	}
 
+	fmt.Println("Base64 decoding...")
 	data, err := base64.StdEncoding.DecodeString(string(input[1:]))
 	if err != nil {
 		fmt.Println("Error decoding input file:", err)
@@ -37,6 +40,7 @@ func main() {
 	}
 	//fmt.Println(data)
 
+	fmt.Println("Decompressing...")
 	r, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
 		panic(err)
@@ -69,6 +73,7 @@ func main() {
 
 	newbp := Bp{}
 
+	fmt.Println("Unmarshaling JSON...")
 	err = json.Unmarshal(enflated, &newbp)
 	if err != nil {
 		panic(err)
@@ -82,25 +87,26 @@ func main() {
 		fmt.Println(string(str))
 	}
 
+	fmt.Println("Drawing image...")
 	mapimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
 	newimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
 
-	count := 0
+	//count := 0
 	for _, v := range newbp.BluePrint.Entities {
-		x := int(v.Position.X-32) * 4
-		y := int(v.Position.Y+16) * 4
-		for xo := 1; xo <= 4; xo = xo + 1 {
-			for yo := 1; yo <= 4; yo = yo + 1 {
+		x := int(v.Position.X-32) * scaleup
+		y := int(v.Position.Y+16) * scaleup
+		for xo := 1; xo <= scaleup; xo = xo + 1 {
+			for yo := 1; yo <= scaleup; yo = yo + 1 {
 				mapimage.Set(x+xo, y+yo, color.RGBA{255, 255, 255, 255})
 			}
 		}
 
-		count = count + 1
+		//count = count + 1
 	}
-	fmt.Println(count)
+	//fmt.Println(count)
 
 	var c uint8 = 0
-	size := 32
+	size := checkersize * scaleup
 
 	for y := 0; y < isy; y++ {
 		if y%size == 0 {
