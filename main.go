@@ -24,7 +24,7 @@ var scaleup float64 = 1.0
 
 const checkersize = 32
 const maxmag = 32
-const idealsize = 512
+const idealsize = 1024
 const tlSpace = 2
 
 func findItem(itemName string) data.Item {
@@ -211,16 +211,16 @@ func main() {
 			xoff := x - ((tlSpace + 1) * int(scaleup))
 
 			if xoff%csize != 0 && yoff%csize != 0 {
-				c = 0
+				c = 32
 			} else {
-				c = 16
+				c = 0
 			}
 
 			//If map has pixel here, draw it, otherwise draw BG
 			if mapimage.At(x, y) != (color.RGBA{0, 0, 0, 0}) {
 				newimage.Set(x, y, mapimage.At(x, y))
 			} else {
-				newimage.Set(x, y, color.RGBA{0, c, c, 255})
+				newimage.Set(x, y, color.RGBA{c, c, c, 255})
 			}
 		}
 	}
