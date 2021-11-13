@@ -5,11 +5,11 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
 	"io/ioutil"
+	"log"
 	"math"
 	"os"
 
@@ -28,35 +28,36 @@ const tlSpace = 4.0
 func findItem(itemName string) data.Item {
 	for _, i := range data.ItemData {
 		if i.Name == itemName {
-			//fmt.Println("Found item:", i.Name)
+			//log.Println("Found item:", i.Name)
 			return i
 		}
 	}
 
-	fmt.Println("Item not found:", itemName)
+	log.Println("Item not found:", itemName)
 	return data.Item{"Default", 1, 1, color.RGBA{1, 0, 1, 1}}
 }
 
 func main() {
 
-	fmt.Println("Reading input file...")
+	log.SetFlags(log.Lmicroseconds | log.Llongfile)
+	log.Println("Reading input file...")
 
 	// Open the input file
 	input, err := os.ReadFile(inputFile)
 	if err != nil {
-		fmt.Println("Error opening input file:", err)
+		log.Println("Error opening input file:", err)
 		return
 	}
 
-	fmt.Println("Base64 decoding...")
+	log.Println("Base64 decoding...")
 	data, err := base64.StdEncoding.DecodeString(string(input[1:]))
 	if err != nil {
-		fmt.Println("Error decoding input file:", err)
+		log.Println("Error decoding input file:", err)
 		return
 	}
-	//fmt.Println(data)
+	//log.Println(data)
 
-	fmt.Println("Decompressing...")
+	log.Println("Decompressing...")
 	r, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
 		panic(err)
@@ -65,7 +66,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	//fmt.Println(string(enflated))
+	//log.Println(string(enflated))
 
 	type Xy struct {
 		X float64
@@ -89,7 +90,7 @@ func main() {
 
 	newbp := Bp{}
 
-	fmt.Println("Unmarshaling JSON...")
+	log.Println("Unmarshaling JSON...")
 	err = json.Unmarshal(enflated, &newbp)
 	if err != nil {
 		panic(err)
@@ -100,10 +101,10 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(string(str))
+		log.Println(string(str))
 	}
 
-	fmt.Println("Drawing image...")
+	log.Println("Drawing image...")
 	mapimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
 	newimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
 
@@ -155,7 +156,7 @@ func main() {
 
 		//count = count + 1
 	}
-	//fmt.Println(count)
+	//log.Println(count)
 
 	var c uint8 = 0
 	size := int(math.Round(checkersize * scaleup))
@@ -193,6 +194,6 @@ func main() {
 	}
 
 	output.Close()
-	fmt.Println("Wrote image to", outputFile)
+	log.Println("Wrote image to", outputFile)
 
 }
