@@ -5,6 +5,7 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -19,11 +20,12 @@ import (
 var outputFile = "output.png"
 var inputFile = "input.txt"
 
-const isx = 4096
-const isy = 4096
-const scaleup = 4.0
-const checkersize = 32.0
-const tlSpace = 4.0
+var scaleup float64 = 4.0
+
+const checkersize = 32
+const maxmag = 32
+const idealsize = 512
+const tlSpace = 2
 
 func findItem(itemName string) data.Item {
 	for _, i := range data.ItemData {
@@ -105,22 +107,22 @@ func main() {
 	}
 
 	log.Println("Drawing image...")
-	mapimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
-	newimage := image.NewRGBA(image.Rect(0, 0, isx, isy))
 
 	//Normalize cordinates
-	minx := 0.0
-	miny := 0.0
+	maxx := 0.0
+	maxy := 0.0
 
+	//Find max and min
 	for _, v := range newbp.BluePrint.Entities {
-		if v.Position.X > minx {
-			minx = v.Position.X
+		if v.Position.X > maxx {
+			maxx = v.Position.X
 		}
-		if v.Position.Y > miny {
-			miny = v.Position.Y
+		if v.Position.Y > maxy {
+			maxy = v.Position.Y
 		}
 	}
-
+	minx := maxx
+	miny := maxy
 	for _, v := range newbp.BluePrint.Entities {
 		if v.Position.X < minx {
 			minx = v.Position.X
@@ -130,27 +132,68 @@ func main() {
 		}
 	}
 
-	for _, v := range newbp.BluePrint.Entities {
-		objx := int(v.Position.X - minx + 0.5)
-		objy := int(v.Position.Y - miny + 0.5)
+	//Size image
+	xsize := maxx - minx
+	ysize := maxy - miny
 
+	buf := fmt.Sprintf("BP size: %d x %d", int(xsize), int(ysize))
+	log.Println(buf)
+
+	maxsize := 0
+	if xsize > ysize {
+		maxsize = int(xsize)
+	} else {
+		maxsize = int(ysize)
+	}
+
+	for a := 1; a <= maxmag; a = a + 1 {
+		if maxsize*a < idealsize {
+			scaleup = float64(a)
+		}
+	}
+
+	imx := int(xsize+tlSpace+0.999) * int(scaleup)
+	imy := int(ysize+tlSpace+0.999) * int(scaleup)
+
+	buf = fmt.Sprintf("Image size: %d x %d (%dX mag)", imx, imy, int(scaleup))
+	log.Println(buf)
+
+	mapimage := image.NewRGBA(image.Rect(0, 0, imx, imy))
+	newimage := image.NewRGBA(image.Rect(0, 0, imx, imy))
+
+	//Draw map, scaled
+	var objx, objy, x, y, xs, ys, xo, yo, ix, iy float64
+	for _, v := range newbp.BluePrint.Entities {
+
+		//Offset position
+		objx = v.Position.X - float64(minx)
+		objy = v.Position.Y - float64(miny)
+		//Get color for item
 		item := findItem(v.Name)
 
-		if item.X > 1 {
-			objx = objx - 1
-		}
-		if item.Y > 1 {
-			objy = objy - 1
+		if v.Direction == 2 || v.Direction == 6 {
+			ix = item.Y
+			iy = item.X
+		} else {
+			ix = item.X
+			iy = item.Y
 		}
 
-		x := int(objx*scaleup) + ((tlSpace + 2) * scaleup)
-		y := int(objy*scaleup) + (tlSpace * scaleup)
-		xs := int(item.X * scaleup)
-		ys := int(item.Y * scaleup)
+		if ix > 1 {
+			objx = objx - (ix / 2.0) + 0.5
+		}
+		if iy > 1 {
+			objy = objy - (iy / 2.0) + 0.5
+		}
 
-		for xo := 0; xo < xs; xo = xo + 1 {
-			for yo := 0; yo < ys; yo = yo + 1 {
-				mapimage.Set(x+xo, y+yo, item.Color)
+		x = ((objx * scaleup) + (tlSpace * scaleup))
+		y = ((objy * scaleup) + (tlSpace * scaleup))
+
+		xs = ix * scaleup
+		ys = iy * scaleup
+		for xo = 0.0; xo < xs; xo = xo + 1 {
+			for yo = 0.0; yo < ys; yo = yo + 1 {
+				mapimage.Set(int(x+xo), int(y+yo), item.Color)
 			}
 		}
 
@@ -161,17 +204,17 @@ func main() {
 	var c uint8 = 0
 	size := int(math.Round(checkersize * scaleup))
 
-	for y := 0; y < isy; y++ {
-		if (y-(tlSpace*scaleup))%size == 0 {
+	for y := 0; y < imy; y++ {
+		if (y-(tlSpace*int(scaleup)))%size == 0 {
 			if c == 0 {
 				c = 1
 			} else {
 				c = 0
 			}
 		}
-		for x := 0; x < isx; x++ {
+		for x := 0; x < imx; x++ {
 
-			if (x-((tlSpace+1)*scaleup))%size == 0 {
+			if (x-((tlSpace+1)*int(scaleup)))%size == 0 {
 				if c == 0 {
 					c = 16
 				} else {
