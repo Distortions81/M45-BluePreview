@@ -77,9 +77,9 @@ var ItemData = [...]Item{
 	{"express-underground-belt", 1, 1, ColorGray},
 
 	//Splitters
-	{"splitter", 2, 1, ColorGray},
-	{"fast-splitter", 2, 1, ColorGray},
-	{"express-splitter", 2, 1, ColorGray},
+	{"splitter", 2, 1, ColorWhite},
+	{"fast-splitter", 2, 1, ColorWhite},
+	{"express-splitter", 2, 1, ColorWhite},
 
 	//Inserters
 	{"burner-inserter", 1, 1, ColorOrange},
