@@ -20,7 +20,7 @@ import (
 var outputFile = "output.png"
 var inputFile = "input.txt"
 
-var scaleup float64 = 4.0
+var scaleup float64 = 1.0
 
 const checkersize = 32
 const maxmag = 32
@@ -133,8 +133,8 @@ func main() {
 	}
 
 	//Size image
-	xsize := maxx - minx
-	ysize := maxy - miny
+	xsize := int(maxx - minx)
+	ysize := int(maxy - miny)
 
 	buf := fmt.Sprintf("BP size: %d x %d", int(xsize), int(ysize))
 	log.Println(buf)
@@ -152,8 +152,8 @@ func main() {
 		}
 	}
 
-	imx := int(xsize+tlSpace*2+0.999) * int(scaleup)
-	imy := int(ysize+tlSpace*2+0.999) * int(scaleup)
+	imx := int(xsize+tlSpace*2) * int(scaleup)
+	imy := int(ysize+tlSpace*2) * int(scaleup)
 
 	buf = fmt.Sprintf("Image size: %d x %d (%dX mag)", imx, imy, int(scaleup))
 	log.Println(buf)
@@ -203,24 +203,17 @@ func main() {
 
 	//Draw checkerboard background, draw map on top
 	var c uint8 = 0
-	size := int(math.Round(checkersize * scaleup))
+	csize := int(math.Round(checkersize * scaleup))
 
 	for y := 0; y < imy; y++ {
-		if (y-(tlSpace*int(scaleup)))%size == 0 {
-			if c == 0 {
-				c = 1
-			} else {
-				c = 0
-			}
-		}
 		for x := 0; x < imx; x++ {
+			yoff := y - ((tlSpace) * int(scaleup))
+			xoff := x - ((tlSpace + 1) * int(scaleup))
 
-			if (x-((tlSpace+1)*int(scaleup)))%size == 0 {
-				if c == 0 {
-					c = 16
-				} else {
-					c = 0
-				}
+			if xoff%csize != 0 && yoff%csize != 0 {
+				c = 0
+			} else {
+				c = 16
 			}
 
 			//If map has pixel here, draw it, otherwise draw BG
