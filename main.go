@@ -152,8 +152,8 @@ func main() {
 		}
 	}
 
-	imx := int(xsize+tlSpace+0.999) * int(scaleup)
-	imy := int(ysize+tlSpace+0.999) * int(scaleup)
+	imx := int(xsize+tlSpace*2+0.999) * int(scaleup)
+	imy := int(ysize+tlSpace*2+0.999) * int(scaleup)
 
 	buf = fmt.Sprintf("Image size: %d x %d (%dX mag)", imx, imy, int(scaleup))
 	log.Println(buf)
@@ -201,6 +201,7 @@ func main() {
 	}
 	//log.Println(count)
 
+	//Draw checkerboard background, draw map on top
 	var c uint8 = 0
 	size := int(math.Round(checkersize * scaleup))
 
