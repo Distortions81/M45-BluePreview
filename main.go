@@ -39,7 +39,7 @@ func findItem(itemName string) data.Item {
 
 func main() {
 
-	log.SetFlags(log.Lmicroseconds | log.Llongfile)
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	log.Println("Reading input file...")
 
 	// Open the input file
