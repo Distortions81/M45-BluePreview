@@ -1,2 +1,3 @@
-/M45-FactMap.exe
-/output.png
+*.exe
+*.json
+*.png
