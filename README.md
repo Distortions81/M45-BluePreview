@@ -1,4 +1,4 @@
-# M45-FactMap
+# M45-BluePreview
 
 Converts Factorio blueprint strings to mini-map style images.
 Made for M45-Science servers. Witten in golang 1.17
