@@ -5,6 +5,7 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
@@ -18,10 +19,8 @@ import (
 	"./data"
 )
 
-const version = "v0.0.3a"
-
-var outputFile = "output.png"
-var inputFile = "bp.txt"
+const version = "023"
+const build = "111420210146p"
 
 var scaleup float64 = 1.0 //Minimum scale
 
@@ -75,7 +74,46 @@ func findItem(itemName string) data.Item {
 	return data.Item{"Default", 1, 1, color.RGBA{1, 0, 1, 1}}
 }
 
+func bAddr(b *bool) bool {
+	boolVar := *b
+
+	if boolVar {
+		return true
+	}
+
+	return false
+
+}
+
+func strAddr(str *string) string {
+	newString := string(*str)
+
+	return newString
+}
+
 func main() {
+
+	inputFileP := flag.String("file", "bp.txt", "blueprint filename")
+	outputNameP := flag.String("name", "bp", "bp name")
+	stdinModeP := flag.Bool("stdin", false, "look for bp data on stdin")
+	jsonOutP := flag.Bool("json", false, "also output json data")
+	showVersionP := flag.Bool("version", false, "display version")
+	flag.Parse()
+
+	outputName := strAddr(outputNameP)
+	inputFile := strAddr(inputFileP)
+	stdinMode := bAddr(stdinModeP)
+	jsonOut := bAddr(jsonOutP)
+	showVersion := bAddr(showVersionP)
+
+	if showVersion {
+		fmt.Println("M45-Science FactMap: " + "v" + version + "-" + build)
+		os.Exit(0)
+	}
+
+	if jsonOut || stdinMode {
+		//do stuff
+	}
 
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	log.Println("Reading input file...")
@@ -255,16 +293,16 @@ func main() {
 		}
 	}
 
-	//Make filenames
+	//If blueprint has a name, use it
 	t := time.Now()
-	bpname := newbp.BluePrint.Label
-	if bpname == "" {
-		bpname = "bp"
+	bpname := ""
+	if newbp.BluePrint.Label != "" {
+		bpname = newbp.BluePrint.Label + "-"
 	}
 	cTime := t.UnixNano()
 
 	//Write json file
-	fileName := fmt.Sprintf("%s-%d.json", bpname, cTime)
+	fileName := fmt.Sprintf("%s-%s%d.json", outputName, bpname, cTime)
 	err = os.WriteFile(fileName, enflated, 0644)
 	if err != nil {
 		panic(err)
