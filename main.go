@@ -13,20 +13,56 @@ import (
 	"log"
 	"math"
 	"os"
+	"time"
 
 	"./data"
 )
 
+const version = "v0.0.3a"
+
 var outputFile = "output.png"
-var inputFile = "input.txt"
+var inputFile = "bp.txt"
 
-var scaleup float64 = 1.0
+var scaleup float64 = 1.0 //Minimum scale
 
-const checkersize = 32
-const maxmag = 32
-const idealsize = 1024
-const tlSpace = 2
+const checkersize = 32 //Checkerboard BG size, chunks are 32
+const maxmag = 32      //Max magnification for small bps
+const idealsize = 1024 //Magnify to this size
+const tlSpace = 2      //Margins
 
+type Xy struct {
+	X float64
+	Y float64
+}
+type Ent struct {
+	Entity_number int
+	Name          string
+	Position      Xy
+	Direction     int
+}
+
+type SignalData struct {
+	Type string
+	Name string
+}
+
+type Icn struct {
+	Signal SignalData
+	Index  int
+}
+
+type BpData struct {
+	Entities []Ent
+	Icons    []Icn
+	Item     string
+	Label    string
+	Version  int64
+}
+type Bp struct {
+	BluePrint BpData
+}
+
+//Look through data.go and find item type
 func findItem(itemName string) data.Item {
 	for _, i := range data.ItemData {
 		if i.Name == itemName {
@@ -70,26 +106,6 @@ func main() {
 	}
 	//log.Println(string(enflated))
 
-	type Xy struct {
-		X float64
-		Y float64
-	}
-	type Ent struct {
-		Entity_number int
-		Name          string
-		Position      Xy
-		Direction     int
-	}
-	type BpData struct {
-		Entities []Ent
-		Item     string
-		Label    string
-		Version  int64
-	}
-	type Bp struct {
-		BluePrint BpData
-	}
-
 	newbp := Bp{}
 
 	log.Println("Unmarshaling JSON...")
@@ -98,6 +114,8 @@ func main() {
 		panic(err)
 	}
 
+	//Re-Encode json and pretty print it
+	//Disabled
 	if 1 == 2 {
 		str, err := json.Marshal(newbp)
 		if err != nil {
@@ -107,7 +125,6 @@ func main() {
 	}
 
 	log.Println("Drawing image...")
-
 	//Normalize cordinates
 	maxx := 0.0
 	maxy := 0.0
@@ -139,6 +156,7 @@ func main() {
 	buf := fmt.Sprintf("BP size: %d x %d", int(xsize), int(ysize))
 	log.Println(buf)
 
+	//Find largest side
 	maxsize := 0
 	if xsize > ysize {
 		maxsize = int(xsize)
@@ -146,18 +164,21 @@ func main() {
 		maxsize = int(ysize)
 	}
 
+	//Scale up to max magnifcation, or ideal size
 	for a := 1; a <= maxmag; a = a + 1 {
 		if maxsize*a < idealsize {
 			scaleup = float64(a)
 		}
 	}
 
+	//Offset x/y with margins and scale it up to the magnified size
 	imx := int(xsize+tlSpace*2) * int(scaleup)
 	imy := int(ysize+tlSpace*2) * int(scaleup)
 
 	buf = fmt.Sprintf("Image size: %d x %d (%dX mag)", imx, imy, int(scaleup))
 	log.Println(buf)
 
+	//Allocate image and bg
 	mapimage := image.NewRGBA(image.Rect(0, 0, imx, imy))
 	newimage := image.NewRGBA(image.Rect(0, 0, imx, imy))
 
@@ -171,14 +192,16 @@ func main() {
 		//Get color for item
 		item := findItem(v.Name)
 
-		if v.Direction == 2 || v.Direction == 6 {
+		//Handle item rotation
+		if v.Direction == 2 || v.Direction == 6 { //east/west
 			ix = item.Y
 			iy = item.X
-		} else {
+		} else { //north/south, etc
 			ix = item.X
 			iy = item.Y
 		}
 
+		//If item side is larger than 1, deal with recentering it
 		if ix > 1 {
 			objx = objx - (ix / 2.0) + 0.5
 		}
@@ -186,11 +209,15 @@ func main() {
 			objy = objy - (iy / 2.0) + 0.5
 		}
 
+		//Item x/y and margin offsets
 		x = ((objx * scaleup) + (tlSpace * scaleup))
 		y = ((objy * scaleup) + (tlSpace * scaleup))
 
+		//Item size, scaled
 		xs = ix * scaleup
 		ys = iy * scaleup
+
+		//Draw item, magnified
 		for xo = 0.0; xo < xs; xo = xo + 1 {
 			for yo = 0.0; yo < ys; yo = yo + 1 {
 				mapimage.Set(int(x+xo), int(y+yo), item.Color)
@@ -201,15 +228,18 @@ func main() {
 	}
 	//log.Println(count)
 
-	//Draw checkerboard background, draw map on top
-	var c uint8 = 0
+	//Draw checkerboard background
+	var c uint8
 	csize := int(math.Round(checkersize * scaleup))
 
 	for y := 0; y < imy; y++ {
 		for x := 0; x < imx; x++ {
+
+			//x/y, margin offset, scaled
 			yoff := y - ((tlSpace) * int(scaleup))
 			xoff := x - ((tlSpace + 1) * int(scaleup))
 
+			//Only draw boarders
 			if xoff%csize != 0 && yoff%csize != 0 {
 				c = 32
 			} else {
@@ -225,12 +255,29 @@ func main() {
 		}
 	}
 
-	output, _ := os.Create(outputFile)
+	//Make filenames
+	t := time.Now()
+	bpname := newbp.BluePrint.Label
+	if bpname == "" {
+		bpname = "bp"
+	}
+	cTime := t.UnixNano()
+
+	//Write json file
+	fileName := fmt.Sprintf("%s-%d.json", bpname, cTime)
+	err = os.WriteFile(fileName, enflated, 0644)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Wrote json to", fileName)
+
+	//Write the png file
+	fileName = fmt.Sprintf("%s-%d.png", bpname, cTime)
+	output, _ := os.Create(fileName)
 	if png.Encode(output, newimage) != nil {
 		panic("Failed to write image")
 	}
-
+	log.Println("Wrote image to", fileName)
 	output.Close()
-	log.Println("Wrote image to", outputFile)
 
 }
