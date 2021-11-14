@@ -14,6 +14,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"path/filepath"
 	"time"
 
 	"./data"
@@ -62,15 +63,17 @@ type Bp struct {
 }
 
 //Look through data.go and find item type
-func findItem(itemName string) data.Item {
+func findItem(itemName string, debug bool) data.Item {
 	for _, i := range data.ItemData {
 		if i.Name == itemName {
-			//log.Println("Found item:", i.Name)
+			if debug {
+				log.Println("Found item:", i.Name)
+			}
 			return i
 		}
 	}
 
-	log.Println("Item not found:", itemName)
+	log.Println("ERROR: Item not found:", itemName)
 	return data.Item{"Default", 1, 1, color.RGBA{1, 0, 1, 1}}
 }
 
@@ -93,11 +96,15 @@ func strAddr(str *string) string {
 
 func main() {
 
-	inputFileP := flag.String("file", "bp.txt", "blueprint filename")
-	outputNameP := flag.String("name", "bp", "bp name")
+	inputFileP := flag.String("file", "bp.txt", "filename of input")
+	outputNameP := flag.String("name", "bp", "blueprint name")
 	stdinModeP := flag.Bool("stdin", false, "look for bp data on stdin")
 	jsonOutP := flag.Bool("json", false, "also output json data")
 	showVersionP := flag.Bool("version", false, "display version")
+	showHelpP := flag.Bool("help", false, "display help")
+	showTimeP := flag.Bool("time", true, "put time (unix nano) in filenames")
+	showVerboseP := flag.Bool("verbose", false, "verbose output (progress)")
+	showDebugP := flag.Bool("debug", false, "debug output (huge)")
 	flag.Parse()
 
 	outputName := strAddr(outputNameP)
@@ -105,35 +112,68 @@ func main() {
 	stdinMode := bAddr(stdinModeP)
 	jsonOut := bAddr(jsonOutP)
 	showVersion := bAddr(showVersionP)
+	showHelp := bAddr(showHelpP)
+	showTime := bAddr(showTimeP)
+	showVerbose := bAddr(showVerboseP)
+	showDebug := bAddr(showDebugP)
+
+	//Debug mode also enables verbose
+	if showDebug {
+		showVerbose = true
+	}
+
+	if showHelp {
+		execName := filepath.Base(os.Args[0])
+		fmt.Println("Usage: " + execName + " [options]")
+		fmt.Println("Options:")
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
 
 	if showVersion {
 		fmt.Println("M45-Science FactMap: " + "v" + version + "-" + build)
 		os.Exit(0)
 	}
 
-	if jsonOut || stdinMode {
-		//do stuff
-	}
-
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
-	log.Println("Reading input file...")
 
-	// Open the input file
-	input, err := os.ReadFile(inputFile)
-	if err != nil {
-		log.Println("Error opening input file:", err)
-		return
+	var input []byte
+	var err error
+	if stdinMode {
+		//TODO
+		//read standard input, and don't attempt to read input file.
+		fmt.Println("Not implemented yet.")
+		os.Exit(1)
+	} else {
+
+		if showVerbose {
+			log.Println("Reading input file...")
+		}
+
+		// Open the input file
+		input, err = os.ReadFile(inputFile)
+		if err != nil {
+			log.Println("Error opening input file: "+inputFile+"\n", err)
+			return
+		}
 	}
 
-	log.Println("Base64 decoding...")
+	if showVerbose {
+		log.Println("Decoding...")
+	}
 	data, err := base64.StdEncoding.DecodeString(string(input[1:]))
 	if err != nil {
-		log.Println("Error decoding input file:", err)
+		log.Println("Error decoding input:", err)
 		return
 	}
-	//log.Println(data)
+	if showDebug {
+		log.Println(data)
+	}
 
-	log.Println("Decompressing...")
+	if showVerbose {
+		log.Println("Decompressing...")
+	}
+
 	r, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
 		panic(err)
@@ -142,19 +182,22 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	//log.Println(string(enflated))
+	if showDebug {
+		log.Println(string(enflated))
+	}
 
 	newbp := Bp{}
 
-	log.Println("Unmarshaling JSON...")
+	if showVerbose {
+		log.Println("Unmarshaling JSON...")
+	}
 	err = json.Unmarshal(enflated, &newbp)
 	if err != nil {
 		panic(err)
 	}
 
 	//Re-Encode json and pretty print it
-	//Disabled
-	if 1 == 2 {
+	if showDebug {
 		str, err := json.Marshal(newbp)
 		if err != nil {
 			panic(err)
@@ -162,7 +205,9 @@ func main() {
 		log.Println(string(str))
 	}
 
-	log.Println("Drawing image...")
+	if showVerbose {
+		log.Println("Drawing image...")
+	}
 	//Normalize cordinates
 	maxx := 0.0
 	maxy := 0.0
@@ -191,8 +236,10 @@ func main() {
 	xsize := int(maxx - minx)
 	ysize := int(maxy - miny)
 
-	buf := fmt.Sprintf("BP size: %d x %d", int(xsize), int(ysize))
-	log.Println(buf)
+	if showVerbose {
+		buf := fmt.Sprintf("BP size: %v x %v", int(xsize), int(ysize))
+		log.Println(buf)
+	}
 
 	//Find largest side
 	maxsize := 0
@@ -213,8 +260,10 @@ func main() {
 	imx := int(xsize+tlSpace*2) * int(scaleup)
 	imy := int(ysize+tlSpace*2) * int(scaleup)
 
-	buf = fmt.Sprintf("Image size: %d x %d (%dX mag)", imx, imy, int(scaleup))
-	log.Println(buf)
+	if showVerbose {
+		buf := fmt.Sprintf("Image size: %v x %v (%vX mag)", imx, imy, int(scaleup))
+		log.Println(buf)
+	}
 
 	//Allocate image and bg
 	mapimage := image.NewRGBA(image.Rect(0, 0, imx, imy))
@@ -222,13 +271,14 @@ func main() {
 
 	//Draw map, scaled
 	var objx, objy, x, y, xs, ys, xo, yo, ix, iy float64
+	count := 0
 	for _, v := range newbp.BluePrint.Entities {
 
 		//Offset position
 		objx = v.Position.X - float64(minx)
 		objy = v.Position.Y - float64(miny)
 		//Get color for item
-		item := findItem(v.Name)
+		item := findItem(v.Name, showDebug)
 
 		//Handle item rotation
 		if v.Direction == 2 || v.Direction == 6 { //east/west
@@ -262,9 +312,12 @@ func main() {
 			}
 		}
 
-		//count = count + 1
+		count = count + 1
 	}
-	//log.Println(count)
+	if showDebug {
+		buf := fmt.Sprintf("Item count: %v", count)
+		log.Println(buf)
+	}
 
 	//Draw checkerboard background
 	var c uint8
@@ -299,18 +352,24 @@ func main() {
 	if newbp.BluePrint.Label != "" {
 		bpname = newbp.BluePrint.Label + "-"
 	}
-	cTime := t.UnixNano()
+
+	cTime := ""
+	if showTime {
+		cTime = fmt.Sprintf("%v", t.UnixNano())
+	}
 
 	//Write json file
-	fileName := fmt.Sprintf("%s-%s%d.json", outputName, bpname, cTime)
-	err = os.WriteFile(fileName, enflated, 0644)
-	if err != nil {
-		panic(err)
+	if jsonOut {
+		fileName := fmt.Sprintf("%v-%v%v.json", outputName, bpname, cTime)
+		err = os.WriteFile(fileName, enflated, 0644)
+		if err != nil {
+			panic(err)
+		}
+		log.Println("Wrote json to", fileName)
 	}
-	log.Println("Wrote json to", fileName)
 
 	//Write the png file
-	fileName = fmt.Sprintf("%s-%d.png", bpname, cTime)
+	fileName := fmt.Sprintf("%v-%v%v.png", outputName, bpname, cTime)
 	output, _ := os.Create(fileName)
 	if png.Encode(output, newimage) != nil {
 		panic("Failed to write image")
