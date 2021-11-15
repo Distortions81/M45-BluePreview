@@ -30,6 +30,11 @@ const maxmag = 32      //Max magnification for small bps
 const idealsize = 1024 //Magnify to this size
 const tlSpace = 2      //Margins
 
+//Max sizes
+const maxInput = 10 * 1024 * 1024 //10MB
+const maxJson = 100 * 1024 * 1024 //100MB
+const maxImage = 1024 * 16        //16k
+
 type Xy struct {
 	X float64
 	Y float64
@@ -63,31 +68,30 @@ type Bp struct {
 }
 
 //Look through data.go and find item type
-func findItem(itemName string, debug bool) data.Item {
+func findItem(itemName string) data.Item {
 	for _, i := range data.ItemData {
 		if i.Name == itemName {
-			if debug {
-				log.Println("Found item:", i.Name)
-			}
 			return i
 		}
 	}
 
 	log.Println("ERROR: Item not found:", itemName)
-	return data.Item{"Default", 1, 1, color.RGBA{1, 0, 1, 1}}
+	return data.Item{Name: "Default", X: 1, Y: 1, Color: color.RGBA{1, 0, 1, 1}}
 }
 
+//bool pointer to bool
 func bAddr(b *bool) bool {
 	boolVar := *b
 
 	if boolVar {
-		return true
+		return boolVar
 	}
 
 	return false
 
 }
 
+//String pointer to string
 func strAddr(str *string) string {
 	newString := string(*str)
 
@@ -96,15 +100,19 @@ func strAddr(str *string) string {
 
 func main() {
 
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
+
+	//Lanch params
 	inputFileP := flag.String("file", "bp.txt", "filename of input")
 	outputNameP := flag.String("name", "bp", "blueprint name")
 	stdinModeP := flag.Bool("stdin", false, "look for bp data on stdin")
 	jsonOutP := flag.Bool("json", false, "also output json data")
 	showVersionP := flag.Bool("version", false, "display version")
 	showHelpP := flag.Bool("help", false, "display help")
-	showTimeP := flag.Bool("time", true, "put time (unix nano) in filenames")
+	showTimeP := flag.Bool("time", false, "put time (unix nano) in filenames")
 	showVerboseP := flag.Bool("verbose", false, "verbose output (progress)")
-	showDebugP := flag.Bool("debug", false, "debug output (huge)")
+	showDebugP := flag.Bool("debug", false, "debug output")
+	showCheckerP := flag.Bool("checker", true, "show checkerboard background")
 	flag.Parse()
 
 	outputName := strAddr(outputNameP)
@@ -116,22 +124,25 @@ func main() {
 	showTime := bAddr(showTimeP)
 	showVerbose := bAddr(showVerboseP)
 	showDebug := bAddr(showDebugP)
+	showChecker := bAddr(showCheckerP)
 
 	//Debug mode also enables verbose
 	if showDebug {
 		showVerbose = true
 	}
 
+	//Launch param help
 	if showHelp {
 		execName := filepath.Base(os.Args[0])
-		fmt.Println("Usage: " + execName + " [options]")
-		fmt.Println("Options:")
+		log.Println("Usage: " + execName + " [options]")
+		log.Println("Options:")
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
 
+	//Show version and build
 	if showVersion {
-		fmt.Println("M45-Science FactMap: " + "v" + version + "-" + build)
+		log.Println("M45-Science FactMap: " + "v" + version + "-" + build)
 		os.Exit(0)
 	}
 
@@ -142,7 +153,7 @@ func main() {
 	if stdinMode {
 		//TODO
 		//read standard input, and don't attempt to read input file.
-		fmt.Println("Not implemented yet.")
+		log.Println("Not implemented yet.")
 		os.Exit(1)
 	} else {
 
@@ -158,6 +169,12 @@ func main() {
 		}
 	}
 
+	//Max input
+	if len(input) > maxInput {
+		log.Println("Input data too large.")
+		os.Exit(1)
+	}
+
 	if showVerbose {
 		log.Println("Decoding...")
 	}
@@ -165,9 +182,6 @@ func main() {
 	if err != nil {
 		log.Println("Error decoding input:", err)
 		os.Exit(1)
-	}
-	if showDebug {
-		log.Println(data)
 	}
 
 	if showVerbose {
@@ -182,8 +196,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	if showDebug {
-		log.Println(string(enflated))
+
+	//Max decompressed size
+	if len(enflated) > maxJson {
+		log.Println("Input data too large.")
+		os.Exit(1)
 	}
 
 	newbp := Bp{}
@@ -194,15 +211,6 @@ func main() {
 	err = json.Unmarshal(enflated, &newbp)
 	if err != nil {
 		panic(err)
-	}
-
-	//Re-Encode json and pretty print it
-	if showDebug {
-		str, err := json.Marshal(newbp)
-		if err != nil {
-			panic(err)
-		}
-		log.Println(string(str))
 	}
 
 	if showVerbose {
@@ -249,6 +257,11 @@ func main() {
 		maxsize = int(ysize)
 	}
 
+	if xsize > maxImage {
+		log.Println("Final image would be too large.")
+		os.Exit(1)
+	}
+
 	//Scale up to max magnifcation, or ideal size
 	for a := 1; a <= maxmag; a = a + 1 {
 		if maxsize*a < idealsize {
@@ -278,7 +291,7 @@ func main() {
 		objx = v.Position.X - float64(minx)
 		objy = v.Position.Y - float64(miny)
 		//Get color for item
-		item := findItem(v.Name, showDebug)
+		item := findItem(v.Name)
 
 		//Handle item rotation
 		if v.Direction == 2 || v.Direction == 6 { //east/west
@@ -290,11 +303,37 @@ func main() {
 		}
 
 		//If item side is larger than 1, deal with recentering it
-		if ix > 1 {
-			objx = objx - (ix / 2.0) + 0.5
-		}
-		if iy > 1 {
-			objy = objy - (iy / 2.0) + 0.5
+		if v.Name == "offshore-pump" {
+			if v.Direction == 2 { //east
+				objx = objx + 1.0
+			} else if v.Direction == 6 { //west
+				objx = objx - 1.0
+			} else if v.Direction == 0 { //north
+				objy = objy - 1.0
+			} else if v.Direction == 4 { //south
+				objy = objy + 1.0
+			}
+		} else if v.Name == "straight-rail" {
+			if v.Direction == 1 { //ne
+				objy = objy - 0.5
+				objx = objx + 0.5
+			} else if v.Direction == 3 { //se
+				objy = objy + 0.5
+				objx = objx + 0.5
+			} else if v.Direction == 5 { //sw
+				objy = objy + 0.5
+				objx = objx - 0.5
+			} else if v.Direction == 7 { //nw
+				objy = objy - 0.5
+				objx = objx - 0.5
+			}
+		} else {
+			if ix > 1 {
+				objx = objx - (ix / 2.0) + 0.5
+			}
+			if iy > 1 {
+				objy = objy - (iy / 2.0) + 0.5
+			}
 		}
 
 		//Item x/y and margin offsets
@@ -308,7 +347,18 @@ func main() {
 		//Draw item, magnified
 		for xo = 0.0; xo < xs; xo = xo + 1 {
 			for yo = 0.0; yo < ys; yo = yo + 1 {
-				mapimage.Set(int(x+xo), int(y+yo), item.Color)
+				r, g, b, a := (mapimage.At(int(x+xo), int(y+yo))).RGBA()
+				if r == 0 && g == 0 && b == 0 && a == 0 {
+					r, g, b, _ := item.Color.RGBA()
+					mapimage.Set(int(x+xo), int(y+yo), color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), 255})
+				} else {
+					if showDebug {
+						if showDebug {
+							mapimage.Set(int(x+xo), int(y+yo), color.RGBA{254, 0, 0, 255})
+						}
+						log.Println("Error:", v.Name, "at", x+xo, ",", y+yo, "overdraw! Color:", r>>8, g>>8, b>>8)
+					}
+				}
 			}
 		}
 
@@ -320,30 +370,34 @@ func main() {
 	}
 
 	//Draw checkerboard background
-	var c uint8
-	csize := int(math.Round(checkersize * scaleup))
+	if showChecker {
+		var c uint8
+		csize := int(math.Round(checkersize * scaleup))
 
-	for y := 0; y < imy; y++ {
-		for x := 0; x < imx; x++ {
+		for y := 0; y < imy; y++ {
+			for x := 0; x < imx; x++ {
 
-			//x/y, margin offset, scaled
-			yoff := y - ((tlSpace) * int(scaleup))
-			xoff := x - ((tlSpace + 1) * int(scaleup))
+				//x/y, margin offset, scaled
+				yoff := y - ((tlSpace) * int(scaleup))
+				xoff := x - ((tlSpace + 1) * int(scaleup))
 
-			//Only draw boarders
-			if xoff%csize != 0 && yoff%csize != 0 {
-				c = 32
-			} else {
-				c = 0
-			}
+				//Only draw boarders
+				if xoff%csize != 0 && yoff%csize != 0 {
+					c = 32
+				} else {
+					c = 0
+				}
 
-			//If map has pixel here, draw it, otherwise draw BG
-			if mapimage.At(x, y) != (color.RGBA{0, 0, 0, 0}) {
-				newimage.Set(x, y, mapimage.At(x, y))
-			} else {
-				newimage.Set(x, y, color.RGBA{c, c, c, 255})
+				//If map has pixel here, draw it, otherwise draw BG
+				if mapimage.At(x, y) != (color.RGBA{0, 0, 0, 0}) {
+					newimage.Set(x, y, mapimage.At(x, y))
+				} else {
+					newimage.Set(x, y, color.RGBA{c, c, c, 255})
+				}
 			}
 		}
+	} else {
+		newimage = mapimage
 	}
 
 	//If blueprint has a name, use it
@@ -360,7 +414,7 @@ func main() {
 
 	//Write json file
 	if jsonOut {
-		fileName := fmt.Sprintf("%v-%v%v.json", outputName, bpname, cTime)
+		fileName := fmt.Sprintf("%v%v%v.json", outputName, bpname, cTime)
 		err = os.WriteFile(fileName, enflated, 0644)
 		if err != nil {
 			panic(err)
@@ -369,7 +423,7 @@ func main() {
 	}
 
 	//Write the png file
-	fileName := fmt.Sprintf("%v-%v%v.png", outputName, bpname, cTime)
+	fileName := fmt.Sprintf("%v%v%v.png", outputName, bpname, cTime)
 	output, _ := os.Create(fileName)
 	if png.Encode(output, newimage) != nil {
 		panic("Failed to write image")
