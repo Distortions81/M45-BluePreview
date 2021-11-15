@@ -37,17 +37,6 @@ const maxInput = 10 * 1024 * 1024 //10MB
 const maxJson = 100 * 1024 * 1024 //100MB
 const maxImage = 1024 * 16        //16k
 
-var outputName string
-var inputFile string
-var stdinMode bool
-var jsonOut bool
-var showVersion bool
-var showHelp bool
-var showTime bool
-var showVerbose bool
-var showDebug bool
-var showChecker bool
-
 type Xy struct {
 	X float64
 	Y float64
@@ -111,6 +100,25 @@ func strAddr(str *string) string {
 	return newString
 }
 
+//Int pointer to int
+func iAddr(i *int) int {
+	newInt := int(*i)
+
+	return newInt
+}
+
+var outputName string
+var inputFile string
+var stdinMode bool
+var jsonOut bool
+var showVersion bool
+var showHelp bool
+var showTime bool
+var showVerbose bool
+var showDebug bool
+var showChecker bool
+var itemSpacing float64
+
 func main() {
 
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
@@ -126,6 +134,8 @@ func main() {
 	showVerboseP := flag.Bool("verbose", false, "verbose output (progress)")
 	showDebugP := flag.Bool("debug", false, "debug output")
 	showCheckerP := flag.Bool("checker", true, "show checkerboard background")
+	itemSpacingP := flag.Int("space", 1, "draw space around items when magnified")
+	minMagP := flag.Int("minmag", 2, "minimum magnification level")
 	flag.Parse()
 
 	outputName = strAddr(outputNameP)
@@ -138,6 +148,8 @@ func main() {
 	showVerbose = bAddr(showVerboseP)
 	showDebug = bAddr(showDebugP)
 	showChecker = bAddr(showCheckerP)
+	itemSpacing = float64(iAddr(itemSpacingP))
+	scaleup = float64(iAddr(minMagP))
 
 	//Debug mode also enables verbose
 	if showDebug {
@@ -309,7 +321,7 @@ func main() {
 		//Get color for item
 		item := findItem(v.Name)
 
-		//Handle item rotation
+		//Handle item rotation, crudely
 		if v.Direction == 2 || v.Direction == 6 { //east/west
 			ix = item.Y
 			iy = item.X
@@ -373,6 +385,14 @@ func main() {
 			newAlpha = 32
 		} else {
 			newAlpha = 255
+		}
+
+		//Draw item spacing if we are magnified, except special cases
+		if !item.KeepContinuous {
+			if scaleup > 1 {
+				xs = xs - itemSpacing
+				ys = ys - itemSpacing
+			}
 		}
 
 		//Draw item, magnified
