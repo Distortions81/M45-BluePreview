@@ -154,7 +154,7 @@ func main() {
 		input, err = os.ReadFile(inputFile)
 		if err != nil {
 			log.Println("Error opening input file: "+inputFile+"\n", err)
-			return
+			os.Exit(1)
 		}
 	}
 
@@ -164,7 +164,7 @@ func main() {
 	data, err := base64.StdEncoding.DecodeString(string(input[1:]))
 	if err != nil {
 		log.Println("Error decoding input:", err)
-		return
+		os.Exit(1)
 	}
 	if showDebug {
 		log.Println(data)
