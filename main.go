@@ -20,8 +20,8 @@ import (
 	"./data"
 )
 
-const version = "024"
-const build = "111420210231p"
+const version = "025"
+const build = "11152021-1255"
 
 var scaleup float64 = 1.0 //Minimum scale
 
