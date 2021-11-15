@@ -2,15 +2,6 @@ package data
 
 import "image/color"
 
-const NORTH = 0
-const NORTH_EAST = 1
-const EAST = 2
-const SOUTH_EAST = 3
-const SOUTH = 4
-const SOUTH_WEST = 5
-const WEST = 6
-const NORTH_WEST = 7
-
 var ColorRed = color.RGBA{255, 0, 0, 255}
 var ColorGreen = color.RGBA{0, 255, 0, 255}
 var ColorBlue = color.RGBA{0, 0, 255, 255}
