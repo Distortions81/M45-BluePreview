@@ -12,7 +12,6 @@ import (
 	"image/png"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
 	"path/filepath"
 	"time"
@@ -22,10 +21,10 @@ import (
 
 //Code written by CarlOtto81@gmail.com
 //MPL-2.0 License
-const version = "027"         //increment
-const build = "11152021-0931" //mmddyyyy-hhmm(mst)
+const version = "028"         //increment
+const build = "11152021-1050" //mmddyyyy-hhmm(mst)
 
-var scaleup float64 = 1.0 //Minimum scale
+var scaleup float64
 
 const checkersize = 32 //Checkerboard BG size, chunks are 32
 const maxmag = 32      //Max magnification for small bps
@@ -107,6 +106,12 @@ func iAddr(i *int) int {
 	return newInt
 }
 
+func fAddr(f *float64) float64 {
+	newFloat := float64(*f)
+
+	return newFloat
+}
+
 var outputName string
 var inputFile string
 var stdinMode bool
@@ -135,7 +140,7 @@ func main() {
 	showDebugP := flag.Bool("debug", false, "debug output")
 	showCheckerP := flag.Bool("checker", true, "show checkerboard background")
 	itemSpacingP := flag.Int("space", 1, "draw space around items when magnified")
-	minMagP := flag.Int("minmag", 2, "minimum magnification level")
+	minMagP := flag.Float64("minmag", 2, "minimum magnification level")
 	flag.Parse()
 
 	outputName = strAddr(outputNameP)
@@ -149,7 +154,7 @@ func main() {
 	showDebug = bAddr(showDebugP)
 	showChecker = bAddr(showCheckerP)
 	itemSpacing = float64(iAddr(itemSpacingP))
-	scaleup = float64(iAddr(minMagP))
+	scaleup = float64(fAddr(minMagP))
 
 	//Debug mode also enables verbose
 	if showDebug {
@@ -269,8 +274,8 @@ func main() {
 	}
 
 	//Size image
-	xsize := int(maxx - minx)
-	ysize := int(maxy - miny)
+	xsize := maxx - minx
+	ysize := maxy - miny
 
 	if showVerbose {
 		buf := fmt.Sprintf("BP size: %v x %v", int(xsize), int(ysize))
@@ -278,37 +283,37 @@ func main() {
 	}
 
 	//Find largest side
-	maxsize := 0
+	maxsize := 0.0
 	if xsize > ysize {
-		maxsize = int(xsize)
+		maxsize = xsize
 	} else {
-		maxsize = int(ysize)
-	}
-
-	if xsize > maxImage {
-		log.Println("ERROR: Final image would be too large.")
-		os.Exit(1)
+		maxsize = ysize
 	}
 
 	//Scale up to max magnifcation, or ideal size
-	for a := 1; a <= maxmag; a = a + 1 {
+	for a := scaleup; a <= maxmag; a = a + 1.0 {
 		if maxsize*a < idealsize {
 			scaleup = float64(a)
 		}
 	}
 
 	//Offset x/y with margins and scale it up to the magnified size
-	imx := int(xsize+tlSpace*2) * int(scaleup)
-	imy := int(ysize+tlSpace*2) * int(scaleup)
+	imx := (xsize + (tlSpace * 2)) * scaleup
+	imy := (ysize + (tlSpace * 2)) * scaleup
+
+	if imx > maxImage || imy > maxImage {
+		log.Println("ERROR: Final image would be too large.")
+		os.Exit(1)
+	}
 
 	if showVerbose {
-		buf := fmt.Sprintf("Image size: %v x %v (%vX mag)", imx, imy, int(scaleup))
+		buf := fmt.Sprintf("Image size: %d x %d (%2.1fX mag)", int(imx), int(imy), scaleup)
 		log.Println(buf)
 	}
 
 	//Allocate image and bg
-	mapimage := image.NewRGBA(image.Rect(0, 0, imx, imy))
-	newimage := image.NewRGBA(image.Rect(0, 0, imx, imy))
+	mapimage := image.NewRGBA(image.Rect(0, 0, int(imx), int(imy)))
+	newimage := image.NewRGBA(image.Rect(0, 0, int(imx), int(imy)))
 
 	//Draw map, scaled
 	var objx, objy, x, y, xs, ys, xo, yo, ix, iy float64
@@ -358,14 +363,6 @@ func main() {
 				objy = objy - 0.5
 				objx = objx - 0.5
 			}
-		} else {
-			//Recenter items with sides larger than 1
-			if ix > 1 {
-				objx = objx - (ix / 2.0) + 0.5
-			}
-			if iy > 1 {
-				objy = objy - (iy / 2.0) + 0.5
-			}
 		}
 
 		//Item x/y and margin offsets
@@ -375,6 +372,14 @@ func main() {
 		//Item size, scaled
 		xs = ix * scaleup
 		ys = iy * scaleup
+
+		//Recenter items with sides larger than 1
+		if xs > 1 {
+			x = x - (xs / 2.0) + 0.5
+		}
+		if ys > 1 {
+			y = y - (ys / 2.0) + 0.5
+		}
 
 		//Color vars for draw loop
 		var r, g, b, a uint32
@@ -388,10 +393,18 @@ func main() {
 		}
 
 		//Draw item spacing if we are magnified, except special cases
-		if !item.KeepContinuous {
-			if scaleup > 1 {
+		if scaleup > 1.0 {
+			if !item.KeepContinuous {
 				xs = xs - itemSpacing
 				ys = ys - itemSpacing
+			} else {
+				if v.Direction == 2 || v.Direction == 6 {
+					ys = ys - itemSpacing
+					x = x - (itemSpacing / 2.0)
+				} else {
+					xs = xs - itemSpacing
+					y = y - (itemSpacing / 2.0)
+				}
 			}
 		}
 
@@ -433,27 +446,27 @@ func main() {
 	if showChecker {
 		var c uint8
 		//scale size to magnified size
-		csize := int(math.Round(checkersize * scaleup))
+		csize := int(checkersize * scaleup)
 
 		//x/y, margin offset, scaled
-		yoff := ((tlSpace) * int(scaleup))
-		xoff := ((tlSpace + 1) * int(scaleup))
+		yoff := ((tlSpace) * scaleup)
+		xoff := ((tlSpace + 1) * scaleup)
 
-		for y := 0; y < imy; y++ {
-			for x := 0; x < imx; x++ {
+		for y := 0.0; y < imy; y++ {
+			for x := 0.0; x < imx; x++ {
 
 				//Only draw boarders
-				if (x-xoff)%csize != 0 && (y-yoff)%csize != 0 {
+				if int(x-xoff)%csize != 0 && int(y-yoff)%csize != 0 {
 					c = 32
 				} else {
 					c = 0
 				}
 
 				//If map has pixel here, draw it, otherwise draw BG
-				if mapimage.At(x, y) != (color.RGBA{0, 0, 0, 0}) {
-					newimage.Set(x, y, mapimage.At(x, y))
+				if mapimage.At(int(x), int(y)) != (color.RGBA{0, 0, 0, 0}) {
+					newimage.Set(int(x), int(y), mapimage.At(int(x), int(y)))
 				} else {
-					newimage.Set(x, y, color.RGBA{c, c, c, 255})
+					newimage.Set(int(x), int(y), color.RGBA{c, c, c, 255})
 				}
 			}
 		}
