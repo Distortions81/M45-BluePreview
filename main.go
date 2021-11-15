@@ -22,8 +22,8 @@ import (
 
 //Code written by CarlOtto81@gmail.com
 //MPL-2.0 License
-const version = "026"         //increment
-const build = "11152021-0838" //mmddyyyy-hhmm(mst)
+const version = "027"         //increment
+const build = "11152021-0931" //mmddyyyy-hhmm(mst)
 
 var scaleup float64 = 1.0 //Minimum scale
 
