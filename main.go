@@ -20,8 +20,10 @@ import (
 	"./data"
 )
 
-const version = "025"
-const build = "11152021-1255"
+//Code written by CarlOtto81@gmail.com
+//MPL-2.0 License
+const version = "026"         //increment
+const build = "11152021-0838" //mmddyyyy-hhmm(mst)
 
 var scaleup float64 = 1.0 //Minimum scale
 
@@ -34,6 +36,17 @@ const tlSpace = 2      //Margins
 const maxInput = 10 * 1024 * 1024 //10MB
 const maxJson = 100 * 1024 * 1024 //100MB
 const maxImage = 1024 * 16        //16k
+
+var outputName string
+var inputFile string
+var stdinMode bool
+var jsonOut bool
+var showVersion bool
+var showHelp bool
+var showTime bool
+var showVerbose bool
+var showDebug bool
+var showChecker bool
 
 type Xy struct {
 	X float64
@@ -115,16 +128,16 @@ func main() {
 	showCheckerP := flag.Bool("checker", true, "show checkerboard background")
 	flag.Parse()
 
-	outputName := strAddr(outputNameP)
-	inputFile := strAddr(inputFileP)
-	stdinMode := bAddr(stdinModeP)
-	jsonOut := bAddr(jsonOutP)
-	showVersion := bAddr(showVersionP)
-	showHelp := bAddr(showHelpP)
-	showTime := bAddr(showTimeP)
-	showVerbose := bAddr(showVerboseP)
-	showDebug := bAddr(showDebugP)
-	showChecker := bAddr(showCheckerP)
+	outputName = strAddr(outputNameP)
+	inputFile = strAddr(inputFileP)
+	stdinMode = bAddr(stdinModeP)
+	jsonOut = bAddr(jsonOutP)
+	showVersion = bAddr(showVersionP)
+	showHelp = bAddr(showHelpP)
+	showTime = bAddr(showTimeP)
+	showVerbose = bAddr(showVerboseP)
+	showDebug = bAddr(showDebugP)
+	showChecker = bAddr(showCheckerP)
 
 	//Debug mode also enables verbose
 	if showDebug {
@@ -164,14 +177,14 @@ func main() {
 		// Open the input file
 		input, err = os.ReadFile(inputFile)
 		if err != nil {
-			log.Println("Error opening input file: "+inputFile+"\n", err)
+			log.Println("ERROR: Opening input file: "+inputFile+":", err)
 			os.Exit(1)
 		}
 	}
 
 	//Max input
 	if len(input) > maxInput {
-		log.Println("Input data too large.")
+		log.Println("ERROR: Input data too large.")
 		os.Exit(1)
 	}
 
@@ -180,7 +193,7 @@ func main() {
 	}
 	data, err := base64.StdEncoding.DecodeString(string(input[1:]))
 	if err != nil {
-		log.Println("Error decoding input:", err)
+		log.Println("ERROR: decoding input:", err)
 		os.Exit(1)
 	}
 
@@ -190,16 +203,18 @@ func main() {
 
 	r, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
-		panic(err)
+		log.Println("ERROR: decompress start failure:", err)
+		os.Exit(1)
 	}
 	enflated, err := ioutil.ReadAll(r)
 	if err != nil {
-		panic(err)
+		log.Println("ERROR: Decompress read failure:", err)
+		os.Exit(1)
 	}
 
 	//Max decompressed size
 	if len(enflated) > maxJson {
-		log.Println("Input data too large.")
+		log.Println("ERROR: Input data too large.")
 		os.Exit(1)
 	}
 
@@ -210,7 +225,8 @@ func main() {
 	}
 	err = json.Unmarshal(enflated, &newbp)
 	if err != nil {
-		panic(err)
+		log.Println("ERROR: JSON Unmarshal failure:", err)
+		os.Exit(1)
 	}
 
 	if showVerbose {
@@ -258,7 +274,7 @@ func main() {
 	}
 
 	if xsize > maxImage {
-		log.Println("Final image would be too large.")
+		log.Println("ERROR: Final image would be too large.")
 		os.Exit(1)
 	}
 
@@ -304,6 +320,7 @@ func main() {
 
 		//If item side is larger than 1, deal with recentering it
 		if v.Name == "offshore-pump" {
+			//offshore pump is a special case apparently
 			if v.Direction == 2 { //east
 				objx = objx + 1.0
 			} else if v.Direction == 6 { //west
@@ -314,6 +331,8 @@ func main() {
 				objy = objy + 1.0
 			}
 		} else if v.Name == "straight-rail" {
+			//also special case, because of 45 degree angles
+			//TODO: handle 45s and curved rail better
 			if v.Direction == 1 { //ne
 				objy = objy - 0.5
 				objx = objx + 0.5
@@ -328,6 +347,7 @@ func main() {
 				objx = objx - 0.5
 			}
 		} else {
+			//Recenter items with sides larger than 1
 			if ix > 1 {
 				objx = objx - (ix / 2.0) + 0.5
 			}
@@ -344,45 +364,66 @@ func main() {
 		xs = ix * scaleup
 		ys = iy * scaleup
 
+		//Color vars for draw loop
+		var r, g, b, a uint32
+
+		//Dim image in debug mode, to highlight overdraw
+		var newAlpha uint8
+		if showDebug {
+			newAlpha = 32
+		} else {
+			newAlpha = 255
+		}
+
 		//Draw item, magnified
 		for xo = 0.0; xo < xs; xo = xo + 1 {
+			xxo := x + xo //x + offset
 			for yo = 0.0; yo < ys; yo = yo + 1 {
-				r, g, b, a := (mapimage.At(int(x+xo), int(y+yo))).RGBA()
-				if r == 0 && g == 0 && b == 0 && a == 0 {
+				yyo := y + yo //y + offset
+
+				//Get existing color at x/y if debugging
+				if showDebug {
+					r, g, b, a = (mapimage.At(int(xxo), int(yyo))).RGBA()
+				}
+
+				if !showDebug || r == 0 && g == 0 && b == 0 && a == 0 {
+					//Get color from item
 					r, g, b, _ := item.Color.RGBA()
-					mapimage.Set(int(x+xo), int(y+yo), color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), 255})
+
+					//Draw, bitshift to get to 8bit quickly
+					mapimage.Set(int(xxo), int(yyo), color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), newAlpha})
 				} else {
+					//Highlight any overdraw in debug mode
 					if showDebug {
-						if showDebug {
-							mapimage.Set(int(x+xo), int(y+yo), color.RGBA{254, 0, 0, 255})
-						}
-						log.Println("Error:", v.Name, "at", x+xo, ",", y+yo, "overdraw! Color:", r>>8, g>>8, b>>8)
+						mapimage.Set(int(xxo), int(yyo), color.RGBA{255, 0, 0, 255})
+						log.Println(fmt.Sprintf("Overdraw: Name:%v: xy:%v,%v, rgb:%v,%v,%v", v.Name, x+xo, y+yo, r>>8, g>>8, b>>8))
 					}
 				}
 			}
 		}
 
+		//Count bp items
 		count = count + 1
 	}
-	if showDebug {
-		buf := fmt.Sprintf("Item count: %v", count)
-		log.Println(buf)
+	if showVerbose {
+		log.Println(fmt.Sprintf("Item count: %v", count))
 	}
 
 	//Draw checkerboard background
 	if showChecker {
 		var c uint8
+		//scale size to magnified size
 		csize := int(math.Round(checkersize * scaleup))
+
+		//x/y, margin offset, scaled
+		yoff := ((tlSpace) * int(scaleup))
+		xoff := ((tlSpace + 1) * int(scaleup))
 
 		for y := 0; y < imy; y++ {
 			for x := 0; x < imx; x++ {
 
-				//x/y, margin offset, scaled
-				yoff := y - ((tlSpace) * int(scaleup))
-				xoff := x - ((tlSpace + 1) * int(scaleup))
-
 				//Only draw boarders
-				if xoff%csize != 0 && yoff%csize != 0 {
+				if (x-xoff)%csize != 0 && (y-yoff)%csize != 0 {
 					c = 32
 				} else {
 					c = 0
@@ -407,6 +448,7 @@ func main() {
 		bpname = newbp.BluePrint.Label + "-"
 	}
 
+	//Timestamp option
 	cTime := ""
 	if showTime {
 		cTime = fmt.Sprintf("%v", t.UnixNano())
@@ -417,16 +459,18 @@ func main() {
 		fileName := fmt.Sprintf("%v%v%v.json", outputName, bpname, cTime)
 		err = os.WriteFile(fileName, enflated, 0644)
 		if err != nil {
-			panic(err)
+			log.Println("ERROR: Failed to write json:", err)
+			os.Exit(1)
 		}
 		log.Println("Wrote json to", fileName)
 	}
 
 	//Write the png file
 	fileName := fmt.Sprintf("%v%v%v.png", outputName, bpname, cTime)
-	output, _ := os.Create(fileName)
+	output, err := os.Create(fileName)
 	if png.Encode(output, newimage) != nil {
-		panic("Failed to write image")
+		log.Println("ERROR: Failed to write image:", err)
+		os.Exit(1)
 	}
 	log.Println("Wrote image to", fileName)
 	output.Close()
