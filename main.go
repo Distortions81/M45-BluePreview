@@ -19,6 +19,15 @@ import (
 	"./data"
 )
 
+const NORTH = 0
+const NORTH_EAST = 1
+const EAST = 2
+const SOUTH_EAST = 3
+const SOUTH = 4
+const SOUTH_WEST = 5
+const WEST = 6
+const NORTH_WEST = 7
+
 //Code written by CarlOtto81@gmail.com
 //MPL-2.0 License
 const version = "028"         //increment
@@ -327,7 +336,7 @@ func main() {
 		item := findItem(v.Name)
 
 		//Handle item rotation, crudely
-		if v.Direction == 2 || v.Direction == 6 { //east/west
+		if v.Direction == EAST || v.Direction == WEST {
 			ix = item.Y
 			iy = item.X
 		} else { //north/south, etc
@@ -338,28 +347,28 @@ func main() {
 		//If item side is larger than 1, deal with recentering it
 		if v.Name == "offshore-pump" {
 			//offshore pump is a special case apparently
-			if v.Direction == 2 { //east
+			if v.Direction == EAST {
 				objx = objx + 1.0
-			} else if v.Direction == 6 { //west
+			} else if v.Direction == WEST {
 				objx = objx - 1.0
-			} else if v.Direction == 0 { //north
+			} else if v.Direction == NORTH {
 				objy = objy - 1.0
-			} else if v.Direction == 4 { //south
+			} else if v.Direction == SOUTH {
 				objy = objy + 1.0
 			}
 		} else if v.Name == "straight-rail" {
 			//also special case, because of 45 degree angles
 			//TODO: handle 45s and curved rail better
-			if v.Direction == 1 { //ne
+			if v.Direction == NORTH_EAST {
 				objy = objy - 0.5
 				objx = objx + 0.5
-			} else if v.Direction == 3 { //se
+			} else if v.Direction == SOUTH_EAST {
 				objy = objy + 0.5
 				objx = objx + 0.5
-			} else if v.Direction == 5 { //sw
+			} else if v.Direction == SOUTH_WEST {
 				objy = objy + 0.5
 				objx = objx - 0.5
-			} else if v.Direction == 7 { //nw
+			} else if v.Direction == NORTH_WEST {
 				objy = objy - 0.5
 				objx = objx - 0.5
 			}
@@ -398,12 +407,16 @@ func main() {
 				xs = xs - itemSpacing
 				ys = ys - itemSpacing
 			} else {
-				if v.Direction == 2 || v.Direction == 6 {
+				if v.Direction == EAST {
 					ys = ys - itemSpacing
-					x = x - (itemSpacing / 2.0)
-				} else {
+					y = y + 0.5
+				} else if v.Direction == WEST {
+					ys = ys - itemSpacing
+				} else if v.Direction == NORTH {
 					xs = xs - itemSpacing
-					y = y - (itemSpacing / 2.0)
+				} else if v.Direction == SOUTH {
+					xs = xs - itemSpacing
+					y = y + 0.5
 				}
 			}
 		}
