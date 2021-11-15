@@ -100,10 +100,11 @@ var ItemData = [...]Item{
 	{"pipe", 1, 1, ColorLightBlue},
 	{"pipe-to-ground", 1, 1, ColorBlue},
 	{"pump", 1, 2, ColorLightBlue},
+	{"offshore-pump", 1, 2, ColorAqua},
 	{"storage-tank", 2, 2, ColorLightAqua},
 
 	//Rails
-	{"straight-rail", 2, 2, ColorLightGreen},
+	{"straight-rail", 1, 2, ColorLightGreen},
 	{"curved-rail", 2, 2, ColorLightGreen},
 	{"train-stop", 2, 2, ColorGreen},
 	{"rail-signal", 1, 1, ColorGreen},
@@ -140,7 +141,6 @@ var ItemData = [...]Item{
 	//Miners
 	{"burner-mining-drill", 2, 2, ColorSilver},
 	{"electric-mining-drill", 3, 3, ColorSilver},
-	{"offshore-pump", 1, 2, ColorAqua},
 	{"pumpjack", 3, 3, ColorMaroon},
 
 	//Furnaces
