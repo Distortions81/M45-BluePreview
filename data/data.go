@@ -156,8 +156,8 @@ var ItemData = [...]Item{
 	{"rocket-silo", 9, 9, ColorLightPurple, false},
 
 	//Walls
-	{"stone-wall", 1, 1, ColorGray, true},
-	{"gate", 1, 1, ColorLightYellow, true},
+	{"stone-wall", 1, 1, ColorGray, false},
+	{"gate", 1, 1, ColorLightYellow, false},
 
 	//Turrets
 	{"gun-turret", 2, 2, ColorOrange, false},

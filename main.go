@@ -402,7 +402,7 @@ func main() {
 		}
 
 		//Draw item spacing if we are magnified, except special cases
-		if scaleup > 1.0 {
+		if scaleup > 1.0 && item.Name != "stone-wall" {
 			if !item.KeepContinuous {
 				xs = xs - itemSpacing
 				ys = ys - itemSpacing
