@@ -53,126 +53,127 @@ type Item struct {
 	X    float64
 	Y    float64
 
-	Color color.RGBA
+	Color          color.RGBA
+	KeepContinuous bool
 }
 
 var ItemData = [...]Item{
 
 	//Default
-	{"default", 1, 1, ColorOrange},
+	{"default", 1, 1, ColorOrange, false},
 
 	//Chests
-	{"wooden-chest", 1, 1, ColorLightOrange},
-	{"iron-chest", 1, 1, ColorLightOrange},
-	{"steel-chest", 1, 1, ColorLightOrange},
+	{"wooden-chest", 1, 1, ColorLightOrange, false},
+	{"iron-chest", 1, 1, ColorLightOrange, false},
+	{"steel-chest", 1, 1, ColorLightOrange, false},
 
 	//Belts
-	{"transport-belt", 1, 1, ColorLightGray},
-	{"fast-transport-belt", 1, 1, ColorLightGray},
-	{"express-transport-belt", 1, 1, ColorLightGray},
+	{"transport-belt", 1, 1, ColorLightGray, true},
+	{"fast-transport-belt", 1, 1, ColorLightGray, true},
+	{"express-transport-belt", 1, 1, ColorLightGray, true},
 
 	//Unders
-	{"underground-belt", 1, 1, ColorGray},
-	{"fast-underground-belt", 1, 1, ColorGray},
-	{"express-underground-belt", 1, 1, ColorGray},
+	{"underground-belt", 1, 1, ColorGray, false},
+	{"fast-underground-belt", 1, 1, ColorGray, false},
+	{"express-underground-belt", 1, 1, ColorGray, false},
 
 	//Splitters
-	{"splitter", 2, 1, ColorWhite},
-	{"fast-splitter", 2, 1, ColorWhite},
-	{"express-splitter", 2, 1, ColorWhite},
+	{"splitter", 2, 1, ColorWhite, false},
+	{"fast-splitter", 2, 1, ColorWhite, false},
+	{"express-splitter", 2, 1, ColorWhite, false},
 
 	//Inserters
-	{"burner-inserter", 1, 1, ColorOrange},
-	{"inserter", 1, 1, ColorOrange},
-	{"long-handed-inserter", 1, 1, ColorOrange},
-	{"fast-inserter", 1, 1, ColorOrange},
-	{"filter-inserter", 1, 1, ColorOrange},
-	{"stack-inserter", 1, 1, ColorOrange},
-	{"stack-filter-inserter", 1, 1, ColorOrange},
+	{"burner-inserter", 1, 1, ColorOrange, false},
+	{"inserter", 1, 1, ColorOrange, false},
+	{"long-handed-inserter", 1, 1, ColorOrange, false},
+	{"fast-inserter", 1, 1, ColorOrange, false},
+	{"filter-inserter", 1, 1, ColorOrange, false},
+	{"stack-inserter", 1, 1, ColorOrange, false},
+	{"stack-filter-inserter", 1, 1, ColorOrange, false},
 
 	//Poles
-	{"small-electric-pole", 1, 1, ColorRed},
-	{"medium-electric-pole", 1, 1, ColorRed},
-	{"big-electric-pole", 2, 2, ColorRed},
-	{"substation", 2, 2, ColorRed},
+	{"small-electric-pole", 1, 1, ColorRed, false},
+	{"medium-electric-pole", 1, 1, ColorRed, false},
+	{"big-electric-pole", 2, 2, ColorRed, false},
+	{"substation", 2, 2, ColorRed, false},
 
 	//Pipes
-	{"pipe", 1, 1, ColorLightBlue},
-	{"pipe-to-ground", 1, 1, ColorBlue},
-	{"pump", 1, 2, ColorLightBlue},
-	{"offshore-pump", 1, 2, ColorAqua},
-	{"storage-tank", 2, 2, ColorLightAqua},
+	{"pipe", 1, 1, ColorLightBlue, true},
+	{"pipe-to-ground", 1, 1, ColorBlue, false},
+	{"pump", 1, 2, ColorLightBlue, false},
+	{"offshore-pump", 1, 2, ColorAqua, false},
+	{"storage-tank", 2, 2, ColorLightAqua, false},
 
 	//Rails
-	{"straight-rail", 1, 2, ColorLightGreen},
-	{"curved-rail", 2, 2, ColorLightGreen},
-	{"train-stop", 2, 2, ColorGreen},
-	{"rail-signal", 1, 1, ColorGreen},
-	{"rail-chain-signal", 1, 1, ColorGreen},
+	{"straight-rail", 1, 2, ColorLightGreen, true},
+	{"curved-rail", 2, 2, ColorLightGreen, true},
+	{"train-stop", 2, 2, ColorGreen, false},
+	{"rail-signal", 1, 1, ColorGreen, false},
+	{"rail-chain-signal", 1, 1, ColorGreen, false},
 
 	//Logistics
-	{"logistic-chest-active-provider", 1, 1, ColorLightYellow},
-	{"logistic-chest-passive-provider", 1, 1, ColorLightYellow},
-	{"logistic-chest-storage", 1, 1, ColorLightYellow},
-	{"logistic-chest-buffer", 1, 1, ColorLightYellow},
-	{"logistic-chest-requester", 1, 1, ColorLightYellow},
-	{"roboport", 4, 4, ColorYellow},
+	{"logistic-chest-active-provider", 1, 1, ColorLightYellow, false},
+	{"logistic-chest-passive-provider", 1, 1, ColorLightYellow, false},
+	{"logistic-chest-storage", 1, 1, ColorLightYellow, false},
+	{"logistic-chest-buffer", 1, 1, ColorLightYellow, false},
+	{"logistic-chest-requester", 1, 1, ColorLightYellow, false},
+	{"roboport", 4, 4, ColorYellow, false},
 
 	//Lamp
-	{"small-lamp", 1, 1, ColorWhite},
+	{"small-lamp", 1, 1, ColorWhite, false},
 
 	//Combinators
-	{"arithmetic-combinator", 1, 2, ColorLightTeal},
-	{"decider-combinator", 1, 2, ColorLightTeal},
-	{"constant-combinator", 1, 1, ColorLightTeal},
-	{"power-switch", 2, 2, ColorTeal},
-	{"programmable-speaker", 1, 1, ColorFuchsia},
+	{"arithmetic-combinator", 1, 2, ColorLightTeal, false},
+	{"decider-combinator", 1, 2, ColorLightTeal, false},
+	{"constant-combinator", 1, 1, ColorLightTeal, false},
+	{"power-switch", 2, 2, ColorTeal, false},
+	{"programmable-speaker", 1, 1, ColorFuchsia, false},
 
 	//Generators
-	{"boiler", 3, 2, ColorLime},
-	{"steam-engine", 3, 5, ColorLightLime},
-	{"solar-panel", 3, 3, ColorLightLime},
-	{"accumulator", 2, 2, ColorLime},
-	{"nuclear-reactor", 5, 5, ColorAqua},
-	{"heat-pipe", 1, 1, ColorPink},
-	{"heat-exchanger", 3, 2, ColorLightPink},
-	{"steam-turbine", 3, 5, ColorLightLime},
+	{"boiler", 3, 2, ColorLime, false},
+	{"steam-engine", 3, 5, ColorLightLime, false},
+	{"solar-panel", 3, 3, ColorLightLime, false},
+	{"accumulator", 2, 2, ColorLime, false},
+	{"nuclear-reactor", 5, 5, ColorAqua, false},
+	{"heat-pipe", 1, 1, ColorPink, false},
+	{"heat-exchanger", 3, 2, ColorLightPink, false},
+	{"steam-turbine", 3, 5, ColorLightLime, false},
 
 	//Miners
-	{"burner-mining-drill", 2, 2, ColorSilver},
-	{"electric-mining-drill", 3, 3, ColorSilver},
-	{"pumpjack", 3, 3, ColorMaroon},
+	{"burner-mining-drill", 2, 2, ColorSilver, false},
+	{"electric-mining-drill", 3, 3, ColorSilver, false},
+	{"pumpjack", 3, 3, ColorMaroon, false},
 
 	//Furnaces
-	{"stone-furnace", 2, 2, ColorRed},
-	{"steel-furnace", 2, 2, ColorRed},
-	{"electric-furnace", 3, 3, ColorRed},
+	{"stone-furnace", 2, 2, ColorRed, false},
+	{"steel-furnace", 2, 2, ColorRed, false},
+	{"electric-furnace", 3, 3, ColorRed, false},
 
 	//Assemblers
-	{"assembling-machine-1", 3, 3, ColorLightOrange},
-	{"assembling-machine-2", 3, 3, ColorLightOrange},
-	{"assembling-machine-3", 3, 3, ColorLightOrange},
+	{"assembling-machine-1", 3, 3, ColorLightOrange, false},
+	{"assembling-machine-2", 3, 3, ColorLightOrange, false},
+	{"assembling-machine-3", 3, 3, ColorLightOrange, false},
 
 	//Refineries
-	{"oil-refinery", 5, 5, ColorPurple},
-	{"chemical-plant", 3, 3, ColorPurple},
-	{"centrifuge", 3, 3, ColorPurple},
-	{"lab", 3, 3, ColorLightPurple},
+	{"oil-refinery", 5, 5, ColorPurple, false},
+	{"chemical-plant", 3, 3, ColorPurple, false},
+	{"centrifuge", 3, 3, ColorPurple, false},
+	{"lab", 3, 3, ColorLightPurple, false},
 
 	//Late-game
-	{"beacon", 3, 3, ColorLightPurple},
-	{"rocket-silo", 9, 9, ColorLightPurple},
+	{"beacon", 3, 3, ColorLightPurple, false},
+	{"rocket-silo", 9, 9, ColorLightPurple, false},
 
 	//Walls
-	{"stone-wall", 1, 1, ColorGray},
-	{"gate", 1, 1, ColorLightYellow},
+	{"stone-wall", 1, 1, ColorGray, true},
+	{"gate", 1, 1, ColorLightYellow, true},
 
 	//Turrets
-	{"gun-turret", 2, 2, ColorOrange},
-	{"laser-turret", 2, 2, ColorOrange},
-	{"flamethrower-turret", 2, 3, ColorOrange},
-	{"artillery-turret", 3, 3, ColorOrange},
+	{"gun-turret", 2, 2, ColorOrange, false},
+	{"laser-turret", 2, 2, ColorOrange, false},
+	{"flamethrower-turret", 2, 3, ColorOrange, false},
+	{"artillery-turret", 3, 3, ColorOrange, false},
 
 	//Radar
-	{"radar", 3, 3, ColorLightOrange},
+	{"radar", 3, 3, ColorLightOrange, false},
 }
