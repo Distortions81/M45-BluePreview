@@ -30,8 +30,8 @@ const NORTH_WEST = 7
 
 //Code written by CarlOtto81@gmail.com
 //MPL-2.0 License
-const version = "029"          //increment
-const build = "11152021-1257p" //mmddyyyy-hhmm(mst)
+const version = "030"          //increment
+const build = "12302021-0725p" //mmddyyyy-hhmm(mst)
 
 var scaleup float64
 
