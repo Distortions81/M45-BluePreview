@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"./data"
+	"bluepreview/data"
 )
 
 const NORTH = 0
@@ -46,35 +46,42 @@ const maxJson = 100 * 1024 * 1024 //100MB
 const maxImage = 1024 * 16        //16k
 
 type Xy struct {
-	X float64
-	Y float64
+	X float64 `json:"y"`
+	Y float64 `json:"x"`
 }
 type Ent struct {
-	Entity_number int
-	Name          string
-	Position      Xy
-	Direction     int
+	Entity_number int    `json:"entity_number"`
+	Name          string `json:"name"`
+	Position      Xy     `json:"position"`
+	Direction     int    `json:"direction"`
 }
 
 type SignalData struct {
-	Type string
-	Name string
+	Type string `json:"type"`
+	Name string `json:"name"`
 }
 
 type Icn struct {
-	Signal SignalData
-	Index  int
+	Signal SignalData `json:"signaldata"`
+	Index  int        `json:"index"`
 }
 
-type BpData struct {
-	Entities []Ent
-	Icons    []Icn
-	Item     string
-	Label    string
-	Version  int64
+type BluePrintData struct {
+	Entities []Ent  `json:"entities"`
+	Icons    []Icn  `json:"icons"`
+	Item     string `json:"item"`
+	Label    string `json:"label"`
+	Version  int64  `json:"version"`
 }
-type Bp struct {
-	BluePrint BpData
+type BluePrintsData struct {
+	Blueprint BluePrintData `json:"blueprint"`
+}
+type BluePrintBookData struct {
+	Blueprints []BluePrintsData `json:"blueprints"`
+}
+type RootData struct {
+	Blueprintbook BluePrintBookData `json:"blueprint_book"`
+	Blueprint     BluePrintData     `json:"blueprint"`
 }
 
 //Look through data.go and find item type
@@ -244,12 +251,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	newbp := Bp{}
+	newbook := RootData{}
 
 	if showVerbose {
 		log.Println("Unmarshaling JSON...")
 	}
-	err = json.Unmarshal(enflated, &newbp)
+	err = json.Unmarshal(enflated, &newbook)
 	if err != nil {
 		log.Println("ERROR: JSON Unmarshal failure:", err)
 		os.Exit(1)
@@ -262,263 +269,276 @@ func main() {
 	maxx := 0.0
 	maxy := 0.0
 
-	//Find max and min
-	for _, v := range newbp.BluePrint.Entities {
-		if v.Position.X > maxx {
-			maxx = v.Position.X
-		}
-		if v.Position.Y > maxy {
-			maxy = v.Position.Y
-		}
-	}
-	minx := maxx
-	miny := maxy
-	for _, v := range newbp.BluePrint.Entities {
-		if v.Position.X < minx {
-			minx = v.Position.X
-		}
-		if v.Position.Y < miny {
-			miny = v.Position.Y
-		}
-	}
-
-	//Size image
-	xsize := maxx - minx
-	ysize := maxy - miny
-
-	if showVerbose {
-		buf := fmt.Sprintf("BP size: %v x %v", int(xsize), int(ysize))
-		log.Println(buf)
-	}
-
-	//Find largest side
-	maxsize := 0.0
-	if xsize > ysize {
-		maxsize = xsize
+	var BPList []BluePrintData
+	if len(newbook.Blueprintbook.Blueprints) == 0 {
+		BPList = append(BPList, newbook.Blueprint)
 	} else {
-		maxsize = ysize
-	}
-
-	//Scale up to max magnifcation, or ideal size
-	for a := scaleup; a <= maxmag; a = a + 1.0 {
-		if maxsize*a < idealsize {
-			scaleup = float64(a)
+		for _, bp := range newbook.Blueprintbook.Blueprints {
+			BPList = append(BPList, bp.Blueprint)
 		}
 	}
 
-	//Offset x/y with margins and scale it up to the magnified size
-	imx := (xsize + (tlSpace * 2)) * scaleup
-	imy := (ysize + (tlSpace * 2)) * scaleup
+	for a, bp := range BPList {
+		fmt.Println("Blueprint found: ", a)
+		fmt.Println("Blueprint ent count: ", len(bp.Entities))
 
-	if imx > maxImage || imy > maxImage {
-		log.Println("ERROR: Final image would be too large.")
-		os.Exit(1)
-	}
-
-	if showVerbose {
-		buf := fmt.Sprintf("Image size: %d x %d (%2.1fX mag)", int(imx), int(imy), scaleup)
-		log.Println(buf)
-	}
-
-	//Allocate image and bg
-	mapimage := image.NewRGBA(image.Rect(0, 0, int(imx), int(imy)))
-	newimage := image.NewRGBA(image.Rect(0, 0, int(imx), int(imy)))
-
-	//Draw map, scaled
-	var objx, objy, x, y, xs, ys, xo, yo, ix, iy float64
-	count := 0
-	for _, v := range newbp.BluePrint.Entities {
-
-		//Offset position
-		objx = v.Position.X - float64(minx)
-		objy = v.Position.Y - float64(miny)
-		//Get color for item
-		item := findItem(v.Name)
-
-		//Handle item rotation, crudely
-		if v.Direction == EAST || v.Direction == WEST {
-			ix = item.Y
-			iy = item.X
-		} else { //north/south, etc
-			ix = item.X
-			iy = item.Y
-		}
-
-		//If item side is larger than 1, deal with recentering it
-		if v.Name == "offshore-pump" {
-			//offshore pump is a special case apparently
-			if v.Direction == EAST {
-				objx = objx + 1.0
-			} else if v.Direction == WEST {
-				objx = objx - 1.0
-			} else if v.Direction == NORTH {
-				objy = objy - 1.0
-			} else if v.Direction == SOUTH {
-				objy = objy + 1.0
+		for _, v := range bp.Entities {
+			if v.Position.X > maxx {
+				maxx = v.Position.X
 			}
-		} else if v.Name == "straight-rail" {
-			//also special case, because of 45 degree angles
-			//TODO: handle 45s and curved rail better
-			if v.Direction == NORTH_EAST {
-				objy = objy - 0.5
-				objx = objx + 0.5
-			} else if v.Direction == SOUTH_EAST {
-				objy = objy + 0.5
-				objx = objx + 0.5
-			} else if v.Direction == SOUTH_WEST {
-				objy = objy + 0.5
-				objx = objx - 0.5
-			} else if v.Direction == NORTH_WEST {
-				objy = objy - 0.5
-				objx = objx - 0.5
+			if v.Position.Y > maxy {
+				maxy = v.Position.Y
+			}
+		}
+		minx := maxx
+		miny := maxy
+		for _, v := range bp.Entities {
+			if v.Position.X < minx {
+				minx = v.Position.X
+			}
+			if v.Position.Y < miny {
+				miny = v.Position.Y
 			}
 		}
 
-		//Item x/y and margin offsets
-		x = ((objx * scaleup) + (tlSpace * scaleup))
-		y = ((objy * scaleup) + (tlSpace * scaleup))
+		//Size image
+		xsize := maxx - minx
+		ysize := maxy - miny
 
-		//Item size, scaled
-		xs = ix * scaleup
-		ys = iy * scaleup
-
-		//Recenter items with sides larger than 1
-		if xs > 1 {
-			x = x - (xs / 2.0) + 0.5
-		}
-		if ys > 1 {
-			y = y - (ys / 2.0) + 0.5
+		if showVerbose {
+			buf := fmt.Sprintf("BP size: %v x %v", int(xsize), int(ysize))
+			log.Println(buf)
 		}
 
-		//Color vars for draw loop
-		var r, g, b, a uint32
-
-		//Dim image in debug mode, to highlight overdraw
-		var newAlpha uint8
-		if showDebug {
-			newAlpha = 32
+		//Find largest side
+		maxsize := 0.0
+		if xsize > ysize {
+			maxsize = xsize
 		} else {
-			newAlpha = 255
+			maxsize = ysize
 		}
 
-		//Draw item spacing if we are magnified, except special cases
-		if scaleup > 1.0 && item.Name != "stone-wall" {
-			if !item.KeepContinuous {
-				xs = xs - itemSpacing
-				ys = ys - itemSpacing
-			} else {
-				if v.Direction == EAST {
-					ys = ys - itemSpacing
-					y = y + 0.5
-				} else if v.Direction == WEST {
-					ys = ys - itemSpacing
-				} else if v.Direction == NORTH {
-					xs = xs - itemSpacing
-				} else if v.Direction == SOUTH {
-					xs = xs - itemSpacing
-					y = y + 0.5
-				}
+		//Scale up to max magnifcation, or ideal size
+		for a := scaleup; a <= maxmag; a = a + 1.0 {
+			if maxsize*a < idealsize {
+				scaleup = float64(a)
 			}
 		}
 
-		//Draw item, magnified
-		for xo = 0.0; xo < xs; xo = xo + 1 {
-			xxo := x + xo //x + offset
-			for yo = 0.0; yo < ys; yo = yo + 1 {
-				yyo := y + yo //y + offset
+		//Offset x/y with margins and scale it up to the magnified size
+		imx := (xsize + (tlSpace * 2)) * scaleup
+		imy := (ysize + (tlSpace * 2)) * scaleup
 
-				//Get existing color at x/y if debugging
-				if showDebug {
-					r, g, b, a = (mapimage.At(int(xxo), int(yyo))).RGBA()
+		if imx > maxImage || imy > maxImage {
+			log.Println("ERROR: Final image would be too large.")
+			os.Exit(1)
+		}
+
+		if showVerbose {
+			buf := fmt.Sprintf("Image size: %d x %d (%2.1fX mag)", int(imx), int(imy), scaleup)
+			log.Println(buf)
+		}
+
+		//Allocate image and bg
+		mapimage := image.NewRGBA(image.Rect(0, 0, int(imx), int(imy)))
+		newimage := image.NewRGBA(image.Rect(0, 0, int(imx), int(imy)))
+
+		//Draw map, scaled
+		var objx, objy, x, y, xs, ys, xo, yo, ix, iy float64
+		count := 0
+		for _, v := range bp.Entities {
+
+			//Offset position
+			objx = v.Position.X - float64(minx)
+			objy = v.Position.Y - float64(miny)
+			//Get color for item
+			item := findItem(v.Name)
+
+			//Handle item rotation, crudely
+			if v.Direction == EAST || v.Direction == WEST {
+				ix = item.Y
+				iy = item.X
+			} else { //north/south, etc
+				ix = item.X
+				iy = item.Y
+			}
+
+			//If item side is larger than 1, deal with recentering it
+			if v.Name == "offshore-pump" {
+				//offshore pump is a special case apparently
+				if v.Direction == EAST {
+					objx = objx + 1.0
+				} else if v.Direction == WEST {
+					objx = objx - 1.0
+				} else if v.Direction == NORTH {
+					objy = objy - 1.0
+				} else if v.Direction == SOUTH {
+					objy = objy + 1.0
 				}
+			} else if v.Name == "straight-rail" {
+				//also special case, because of 45 degree angles
+				//TODO: handle 45s and curved rail better
+				if v.Direction == NORTH_EAST {
+					objy = objy - 0.5
+					objx = objx + 0.5
+				} else if v.Direction == SOUTH_EAST {
+					objy = objy + 0.5
+					objx = objx + 0.5
+				} else if v.Direction == SOUTH_WEST {
+					objy = objy + 0.5
+					objx = objx - 0.5
+				} else if v.Direction == NORTH_WEST {
+					objy = objy - 0.5
+					objx = objx - 0.5
+				}
+			}
 
-				if !showDebug || r == 0 && g == 0 && b == 0 && a == 0 {
-					//Get color from item
-					r, g, b, _ := item.Color.RGBA()
+			//Item x/y and margin offsets
+			x = ((objx * scaleup) + (tlSpace * scaleup))
+			y = ((objy * scaleup) + (tlSpace * scaleup))
 
-					//Draw, bitshift to get to 8bit quickly
-					mapimage.Set(int(xxo), int(yyo), color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), newAlpha})
+			//Item size, scaled
+			xs = ix * scaleup
+			ys = iy * scaleup
+
+			//Recenter items with sides larger than 1
+			if xs > 1 {
+				x = x - (xs / 2.0) + 0.5
+			}
+			if ys > 1 {
+				y = y - (ys / 2.0) + 0.5
+			}
+
+			//Color vars for draw loop
+			var r, g, b, a uint32
+
+			//Dim image in debug mode, to highlight overdraw
+			var newAlpha uint8
+			if showDebug {
+				newAlpha = 32
+			} else {
+				newAlpha = 255
+			}
+
+			//Draw item spacing if we are magnified, except special cases
+			if scaleup > 1.0 && item.Name != "stone-wall" {
+				if !item.KeepContinuous {
+					xs = xs - itemSpacing
+					ys = ys - itemSpacing
 				} else {
-					//Highlight any overdraw in debug mode
-					if showDebug {
-						mapimage.Set(int(xxo), int(yyo), color.RGBA{255, 0, 0, 255})
-						log.Println(fmt.Sprintf("Overdraw: Name:%v: xy:%v,%v, rgb:%v,%v,%v", v.Name, x+xo, y+yo, r>>8, g>>8, b>>8))
+					if v.Direction == EAST {
+						ys = ys - itemSpacing
+						y = y + 0.5
+					} else if v.Direction == WEST {
+						ys = ys - itemSpacing
+					} else if v.Direction == NORTH {
+						xs = xs - itemSpacing
+					} else if v.Direction == SOUTH {
+						xs = xs - itemSpacing
+						y = y + 0.5
 					}
 				}
 			}
-		}
 
-		//Count bp items
-		count = count + 1
-	}
-	if showVerbose {
-		log.Println(fmt.Sprintf("Item count: %v", count))
-	}
+			//Draw item, magnified
+			for xo = 0.0; xo < xs; xo = xo + 1 {
+				xxo := x + xo //x + offset
+				for yo = 0.0; yo < ys; yo = yo + 1 {
+					yyo := y + yo //y + offset
 
-	//Draw checkerboard background
-	if showChecker {
-		var c uint8
-		//scale size to magnified size
-		csize := int(checkersize * scaleup)
+					//Get existing color at x/y if debugging
+					if showDebug {
+						r, g, b, a = (mapimage.At(int(xxo), int(yyo))).RGBA()
+					}
 
-		//x/y, margin offset, scaled
-		yoff := ((tlSpace) * scaleup)
-		xoff := ((tlSpace + 1) * scaleup)
+					if !showDebug || r == 0 && g == 0 && b == 0 && a == 0 {
+						//Get color from item
+						r, g, b, _ := item.Color.RGBA()
 
-		for y := 0.0; y < imy; y++ {
-			for x := 0.0; x < imx; x++ {
-
-				//Only draw boarders
-				if int(x-xoff)%csize != 0 && int(y-yoff)%csize != 0 {
-					c = 32
-				} else {
-					c = 0
-				}
-
-				//If map has pixel here, draw it, otherwise draw BG
-				if mapimage.At(int(x), int(y)) != (color.RGBA{0, 0, 0, 0}) {
-					newimage.Set(int(x), int(y), mapimage.At(int(x), int(y)))
-				} else {
-					newimage.Set(int(x), int(y), color.RGBA{c, c, c, 255})
+						//Draw, bitshift to get to 8bit quickly
+						mapimage.Set(int(xxo), int(yyo), color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), newAlpha})
+					} else {
+						//Highlight any overdraw in debug mode
+						if showDebug {
+							mapimage.Set(int(xxo), int(yyo), color.RGBA{255, 0, 0, 255})
+							log.Println(fmt.Sprintf("Overdraw: Name:%v: xy:%v,%v, rgb:%v,%v,%v", v.Name, x+xo, y+yo, r>>8, g>>8, b>>8))
+						}
+					}
 				}
 			}
+
+			//Count bp items
+			count = count + 1
 		}
-	} else {
-		newimage = mapimage
-	}
+		if showVerbose {
+			log.Println(fmt.Sprintf("Item count: %v", count))
+		}
 
-	//If blueprint has a name, use it
-	t := time.Now()
-	bpname := ""
-	if newbp.BluePrint.Label != "" {
-		bpname = newbp.BluePrint.Label + "-"
-	}
+		//Draw checkerboard background
+		if showChecker {
+			var c uint8
+			//scale size to magnified size
+			csize := int(checkersize * scaleup)
 
-	//Timestamp option
-	cTime := ""
-	if showTime {
-		cTime = fmt.Sprintf("%v", t.UnixNano())
-	}
+			//x/y, margin offset, scaled
+			yoff := ((tlSpace) * scaleup)
+			xoff := ((tlSpace + 1) * scaleup)
 
-	//Write json file
-	if jsonOut {
-		fileName := fmt.Sprintf("%v%v%v.json", outputName, bpname, cTime)
-		err = os.WriteFile(fileName, enflated, 0644)
-		if err != nil {
-			log.Println("ERROR: Failed to write json:", err)
+			for y := 0.0; y < imy; y++ {
+				for x := 0.0; x < imx; x++ {
+
+					//Only draw boarders
+					if int(x-xoff)%csize != 0 && int(y-yoff)%csize != 0 {
+						c = 32
+					} else {
+						c = 0
+					}
+
+					//If map has pixel here, draw it, otherwise draw BG
+					if mapimage.At(int(x), int(y)) != (color.RGBA{0, 0, 0, 0}) {
+						newimage.Set(int(x), int(y), mapimage.At(int(x), int(y)))
+					} else {
+						newimage.Set(int(x), int(y), color.RGBA{c, c, c, 255})
+					}
+				}
+			}
+		} else {
+			newimage = mapimage
+		}
+
+		//If blueprint has a name, use it
+		t := time.Now()
+		bpname := ""
+		if bp.Label != "" {
+			bpname = bp.Label + "-"
+		}
+
+		//Timestamp option
+		cTime := ""
+		if showTime {
+			cTime = fmt.Sprintf("%v", t.UnixNano())
+		}
+
+		//Write json file
+		if jsonOut {
+			fileName := fmt.Sprintf("%v%v%v.json", outputName, bpname, cTime)
+			err = os.WriteFile(fileName, enflated, 0644)
+			if err != nil {
+				log.Println("ERROR: Failed to write json:", err)
+				os.Exit(1)
+			}
+			log.Println("Wrote json to", fileName)
+		}
+
+		//Write the png file
+		fileName := fmt.Sprintf("%v%v%v.png", outputName, bpname, cTime)
+		output, err := os.Create(fileName)
+		if png.Encode(output, newimage) != nil {
+			log.Println("ERROR: Failed to write image:", err)
 			os.Exit(1)
 		}
-		log.Println("Wrote json to", fileName)
+		log.Println("Wrote image to", fileName)
+		output.Close()
 	}
-
-	//Write the png file
-	fileName := fmt.Sprintf("%v%v%v.png", outputName, bpname, cTime)
-	output, err := os.Create(fileName)
-	if png.Encode(output, newimage) != nil {
-		log.Println("ERROR: Failed to write image:", err)
-		os.Exit(1)
-	}
-	log.Println("Wrote image to", fileName)
-	output.Close()
 
 }

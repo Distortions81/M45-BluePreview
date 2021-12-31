@@ -1,6 +1,7 @@
-M45-BluePreview.exe
 *.png
 *.jpg
 *.json
 *.exe
-bp.txt
+*.txt
+
+bluepreview
